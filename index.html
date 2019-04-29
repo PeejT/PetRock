@@ -22,7 +22,7 @@ img.src = "Images/Sprites.png";
 var cookieTick;
 var awayTick;
 var hunger = 0;
-var awayHunger;
+var awayHunger = 0;
 var graph_height = 16;
 var inadayTick = 86400;
 var feedButtonX = 8; // Used for x of both feed bar and surrounding box/button
@@ -34,24 +34,26 @@ var nowTick = Date.now();
 
 //Split up cookie string and sort out the data collected
 function GetAndSplit_Cookie() {
- //cookieTick = Cookies.get('savedTick'); // This fetches the value of the stored tick counter
- cookieTick = parseInt(localStorage.getItem("savedTick"));
- 
- awayTick = Math.round((nowTick - cookieTick) / 1000); // This works out the difference between NOW time and retrived tick counter in seconds
- 
- //awayHunger =  Cookies.get('savedHunger'); // this fetched the value of the stored hunger level
- awayHunger = parseInt(localStorage.getItem("savedHunger"));
- 
- hunger = awayHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
+if(!!window.localStorage){
+cookieTick = JSON.parse(localStorage.getItem('savedTick'));
+awayHunger = JSON.parse(localStorage.getItem('savedHunger'));
+awayTick = Math.round((nowTick - cookieTick) / 1000); // This works out the difference between NOW time and retrived tick counter in seconds
+hunger = awayHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
+  }
+else{
+    alert("No Web Storage Support");
+  }
 }
+ //cookieTick = Cookies.get('savedTick'); // This fetches the value of the stored tick counter
+ //awayHunger =  Cookies.get('savedHunger'); // this fetched the value of the stored hunger level
 GetAndSplit_Cookie();
 
 //Function to save the cookies
 function saveTheCookies() {
 //Cookies.set('savedTick', nowTick, {expiry : new Date(2020, 0, 1)}, {path : '/'});
-localStorage.setItem("savedTick", nowTick);
+localStorage.setItem("savedTick", JSON.stringify(nowTick));
 //Cookies.set('savedHunger', hunger, {expiry : new Date(2020, 0, 1)}, {path : '/'});
-localStorage.setItem("savedHunger", hunger);
+localStorage.setItem("savedHunger", JSON.stringify(hunger));
 }
 
 //Event listener for feed button press
@@ -60,6 +62,8 @@ canvas.addEventListener("click", function(e) {
  var x = Math.floor(e.clientX - rect.left);
  var y = Math.floor(e.clientY - rect.top);
  //alert("Mouse Position x: " + x + " y: " + y);
+ alert("Mouse Click");
+ localStorage.clear();
  if (
   hunger > ((graph_height / 3) * 2) &&
   x >= feedButtonX &&
@@ -67,6 +71,7 @@ canvas.addEventListener("click", function(e) {
   y >= feedButtonY &&
   y < feedButtonY + feedButtonH
  ) {
+  alert("Feed ME!");
   hunger = 0;
  }
 });
