@@ -35,8 +35,8 @@ var nowTick = Date.now();
 //Split up cookie string and sort out the data collected
 function LoadData() {
 if(!!window.localStorage){
-cookieTick = JSON.parse(localStorage.getItem('savedTick'));
-awayHunger = JSON.parse(localStorage.getItem('savedHunger'));
+cookieTick = JSON.parse(localStorage.getItem("savedTick"));
+awayHunger = JSON.parse(localStorage.getItem("savedHunger"));
 awayTick = Math.round((nowTick - cookieTick) / 1000); // This works out the difference between NOW time and retrived tick counter in seconds
 hunger = awayHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
   }
