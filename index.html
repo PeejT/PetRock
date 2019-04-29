@@ -33,7 +33,7 @@ var my_gradient = ctx.createLinearGradient((feedButtonX + 2), (feedButtonY), (fe
 var nowTick = Date.now();
 
 //Split up cookie string and sort out the data collected
-function GetAndSplit_Cookie() {
+function LoadData() {
 if(!!window.localStorage){
 cookieTick = JSON.parse(localStorage.getItem('savedTick'));
 awayHunger = JSON.parse(localStorage.getItem('savedHunger'));
@@ -42,14 +42,13 @@ hunger = awayHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This 
   }
 else{
     alert("No Web Storage Support");
-  }
-}
  //cookieTick = Cookies.get('savedTick'); // This fetches the value of the stored tick counter
  //awayHunger =  Cookies.get('savedHunger'); // this fetched the value of the stored hunger level
-GetAndSplit_Cookie();
+  }
+}
 
 //Function to save the cookies
-function saveTheCookies() {
+function SaveData() {
 //Cookies.set('savedTick', nowTick, {expiry : new Date(2020, 0, 1)}, {path : '/'});
 localStorage.setItem("savedTick", JSON.stringify(nowTick));
 //Cookies.set('savedHunger', hunger, {expiry : new Date(2020, 0, 1)}, {path : '/'});
@@ -107,7 +106,7 @@ requestAnimationFrame(draw);
  //Waits until the window is about to be closed and saves cookie savedTick, displaying the result in a popup
  // I think nowTick and hunger might be out of scope in the function and so it saves NaN
 window.onunload = function() { //using strict, window is not defined
-    saveTheCookies();
+    SaveData();
     };
 }
 
@@ -118,6 +117,10 @@ function updateTick() {
 function updateHunger() {
 hunger = (hunger + graph_height / (inadayTick));
 }
+
+LoadData();
+updateTick();
+updateHunger();
 
 //Redraw Loop
 draw();
