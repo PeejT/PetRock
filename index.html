@@ -18,7 +18,7 @@
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 var img = new Image(); //using strict, IMAGE is not defined
-img.src = "Images/Sprites.png";
+img.src = "Images/Sprites2.png";
 var cookieTick;
 var awayTick;
 var hunger = 0;
@@ -41,7 +41,7 @@ awayTick = Math.round((nowTick - cookieTick) / 1000); // This works out the diff
 hunger = awayHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
   }
 else{
-    alert("No Web Storage Support");
+    alert("No Web Storage without HTTP");
  //cookieTick = Cookies.get('savedTick'); // This fetches the value of the stored tick counter
  //awayHunger =  Cookies.get('savedHunger'); // this fetched the value of the stored hunger level
   }
@@ -84,8 +84,8 @@ function draw() {
  ctx.fillText("Hunger: " + parseInt(hunger), 380, 20);
  ctx.fillText("Tick: " + nowTick, 380, 30);
 
- ctx.drawImage(img, 0, 0, 16, 16, 20, 8, 16, 16); //Feed
- ctx.drawImage(img, 16, 0, 38, 22, 48, 6, 38, 22); //Rock
+ ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22); //Feed grab_x, grab_y, grab_width_x, grab_width_y, position_x, position_y, scale_x, scale_y
+ ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22); //Rock grab_x, grab_y, grab_width_x, grab_width_y, position_x, position_y, scale_x, scale_y
 
  //Draw nourishment graph - Feed once every 24 hours
  //x, y start of gradient, then x, y end of gradient
@@ -94,12 +94,6 @@ function draw() {
  my_gradient.addColorStop(1, "#f40039");
  ctx.fillStyle = my_gradient;
  ctx.fillRect((feedButtonX + 2), (feedButtonY + 18), 4, (-Math.abs(graph_height) + hunger)); //x, y co-ords of box then width, height
-
- //Draw nourishment surrounding box
- ctx.rect(feedButtonX, (feedButtonY + 20), feedButtonW, (-Math.abs(graph_height) - 4));
- ctx.strokeStyle = "#99a7ae";
- ctx.stroke();
- ctx.closePath();
 
 requestAnimationFrame(draw);
 
