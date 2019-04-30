@@ -12,17 +12,14 @@
 <canvas id="myCanvas" width="480" height="320"></canvas>
 
 <script>
-//code.iamkate.com
-//var Cookies={set:function(b,c,a){b=[encodeURIComponent(b)+"="+encodeURIComponent(c)];a&&("expiry"in a&&("number"==typeof a.expiry&&(a.expiry=new Date(1E3*a.expiry+ +new Date)),b.push("expires="+a.expiry.toGMTString())),"domain"in a&&b.push("domain="+a.domain),"path"in a&&b.push("path="+a.path),"secure"in a&&a.secure&&b.push("secure"));document.cookie=b.join("; ")},get:function(b,c){for(var a=[],e=document.cookie.split(/; */),d=0;d<e.length;d++){var f=e[d].split("=");f[0]==encodeURIComponent(b)&&a.push(decodeURIComponent(f[1].replace(/\+/g,"%20")))}return c?a:a[0]},clear:function(b,c){c||(c={});c.expiry=-86400;this.set(b,"",c)}};
-//var Cookies={set:function(e,n,o){var i=[encodeURIComponent(e)+"="+encodeURIComponent(n)];o&&("expiry"in o&&("number"==typeof o.expiry&&(o.expiry=new Date(1e3*o.expiry+ +new Date)),i.push("expires="+o.expiry.toGMTString())),"domain"in o&&i.push("domain="+o.domain),"path"in o&&i.push("path="+o.path),"secure"in o&&o.secure&&i.push("secure")),document.cookie=i.join("; ")},get:function(e,n){for(var o=[],i=document.cookie.split(/; */),t=0;t<i.length;t++){var p=i[t].split("=");p[0]==encodeURIComponent(e)&&o.push(decodeURIComponent(p[1].replace(/\+/g,"%20")))}return n?o:o[0]},clear:function(e,n){n||(n={}),n.expiry=-86400,this.set(e,"",n)}};
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
-var img = new Image(); //using strict, IMAGE is not defined
+var img = new Image();
 img.src = "Images/Sprites2.png";
-var cookieTick;
+var dataTick;
 var awayTick;
-var hunger = 0;
-var awayHunger = 0;
+var hungerLevel = 0;
+var dataHunger = 0;
 var graph_height = 16;
 var inadayTick = 86400;
 var feedButtonX = 8; // Used for x of both feed bar and surrounding box/button
@@ -32,27 +29,36 @@ var feedButtonH = graph_height + 4; // Used for height of both feed bar and surr
 var my_gradient = ctx.createLinearGradient((feedButtonX + 2), (feedButtonY), (feedButtonX + 6), (feedButtonY + 18));
 var nowTick = Date.now();
 
-//Split up cookie string and sort out the data collected
+//Load the data if localStorage enabled
 function LoadData() {
 if(!!window.localStorage){
-cookieTick = JSON.parse(localStorage.getItem("savedTick"));
-awayHunger = JSON.parse(localStorage.getItem("savedHunger"));
-awayTick = Math.round((nowTick - cookieTick) / 1000); // This works out the difference between NOW time and retrived tick counter in seconds
-hunger = awayHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
+dataTick = JSON.parse(localStorage.getItem("savedTick"));
+dataHunger = JSON.parse(localStorage.getItem("savedHunger"));
+awayTick = Math.round((nowTick - dataTick) / 1000); // This works out the difference between NOW time and retrived tick counter in seconds
+hungerLevel = dataHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
   }
 else{
     alert("No Web Storage without HTTP");
- //cookieTick = Cookies.get('savedTick'); // This fetches the value of the stored tick counter
- //awayHunger =  Cookies.get('savedHunger'); // this fetched the value of the stored hunger level
   }
 }
 
-//Function to save the cookies
+function updateTick() {
+ nowTick = Date.now();
+}
+
+function updateHunger() {
+if (parseInt(hungerLevel) < 16){
+hungerLevel = (hungerLevel + graph_height / (inadayTick));
+}
+else {
+	hungerLevel = 16;
+    }
+}
+
+//Function to save the data
 function SaveData() {
-//Cookies.set('savedTick', nowTick, {expiry : new Date(2020, 0, 1)}, {path : '/'});
 localStorage.setItem("savedTick", JSON.stringify(nowTick));
-//Cookies.set('savedHunger', hunger, {expiry : new Date(2020, 0, 1)}, {path : '/'});
-localStorage.setItem("savedHunger", JSON.stringify(hunger));
+localStorage.setItem("savedHunger", JSON.stringify(hungerLevel));
 }
 
 //Event listener for feed button press
@@ -61,17 +67,17 @@ canvas.addEventListener("click", function(e) {
  var x = Math.floor(e.clientX - rect.left);
  var y = Math.floor(e.clientY - rect.top);
  //alert("Mouse Position x: " + x + " y: " + y);
- alert("Mouse Click");
+ //alert("Mouse Click");
  localStorage.clear();
  if (
-  hunger > ((graph_height / 3) * 2) &&
+  hungerLevel > ((graph_height / 3) * 2) &&
   x >= feedButtonX &&
   x < feedButtonX + feedButtonW &&
   y >= feedButtonY &&
   y < feedButtonY + feedButtonH
  ) {
   alert("Feed ME!");
-  hunger = 0;
+  hungerLevel = 0;
  }
 });
 
@@ -81,7 +87,7 @@ function draw() {
  ctx.fillStyle = "#0095DD";
  ctx.clearRect(0, 0, canvas.width, canvas.height);
  ctx.fillText("Seconds Away: " + awayTick, 380, 10);
- ctx.fillText("Hunger: " + parseInt(hunger), 380, 20);
+ ctx.fillText("Hunger: " + parseInt(hungerLevel), 380, 20);
  ctx.fillText("Tick: " + nowTick, 380, 30);
 
  ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22); //Feed grab_x, grab_y, grab_width_x, grab_width_y, position_x, position_y, scale_x, scale_y
@@ -93,33 +99,19 @@ function draw() {
  my_gradient.addColorStop(0.66, "#ffad38");
  my_gradient.addColorStop(1, "#f40039");
  ctx.fillStyle = my_gradient;
- ctx.fillRect((feedButtonX + 2), (feedButtonY + 18), 4, (-Math.abs(graph_height) + hunger)); //x, y co-ords of box then width, height
+ ctx.fillRect((feedButtonX + 2), (feedButtonY + 18), 4, (-Math.abs(graph_height) + hungerLevel)); //x, y co-ords of box then width, height
 
 requestAnimationFrame(draw);
+updateTick();
+updateHunger();
 
- //Waits until the window is about to be closed and saves cookie savedTick, displaying the result in a popup
- // I think nowTick and hunger might be out of scope in the function and so it saves NaN
-window.onunload = function() { //using strict, window is not defined
+window.onunload = function() {
     SaveData();
     };
 }
 
-function updateTick() {
- nowTick = Date.now();
-}
-
-function updateHunger() {
-hunger = (hunger + graph_height / (inadayTick));
-}
-
 LoadData();
-updateTick();
-updateHunger();
-
-//Redraw Loop
 draw();
-setInterval(updateTick, 10);
-setInterval(updateHunger, 1000);
 
 </script>
 </body>
