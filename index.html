@@ -18,22 +18,24 @@ var img = new Image();
 img.src = "Images/Sprites2.png";
 var dataTick;
 var awayTick;
-var hungerLevel = 0;
-var dataHunger = 0;
+var hungerLevel;
+var dataHunger;
 var graph_height = 16;
-var inadayTick = 86400;
+var inadayTick = 86400; //or inadayTick*1000 = milliseconds in a day
+var tuesdayInMiliseconds;
+var nowTick = Date.now();
 var feedButtonX = 8; // Used for x of both feed bar and surrounding box/button
 var feedButtonY = 6; // Used for Y of both feed bar and surrounding box/button
 var feedButtonW = 34; // Used for width of both feed bar and surrounding box/button
 var feedButtonH = graph_height + 4; // Used for height of both feed bar and surrounding box/button
 var my_gradient = ctx.createLinearGradient((feedButtonX + 2), (feedButtonY), (feedButtonX + 6), (feedButtonY + 18));
-var nowTick = Date.now();
 
 //Load the data if localStorage enabled
 function LoadData() {
 if(!!window.localStorage){
 dataTick = JSON.parse(localStorage.getItem("savedTick"));
 dataHunger = JSON.parse(localStorage.getItem("savedHunger"));
+tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
 awayTick = Math.round((nowTick - dataTick) / 1000); // This works out the difference between NOW time and retrived tick counter in seconds
 hungerLevel = dataHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
   }
@@ -48,17 +50,29 @@ function updateTick() {
 
 function updateHunger() {
 if (parseInt(hungerLevel) < 16){
-hungerLevel = (hungerLevel + graph_height / (inadayTick));
+hungerLevel = (hungerLevel + graph_height / (inadayTick*1000));
 }
 else {
 	hungerLevel = 16;
     }
 }
 
+//This checks to see if today is Tuesday. If it isn't, work out when Tuesday is. If it is, there should be an else on the if to make rock happy
+function getTuesday(){
+var d=new Date();
+d.setDate((2-d.getDay()+7)%7+d.getDate());
+var tuesday = d.toDateString();
+tuesdayInMiliseconds = new Date(tuesday).getTime();
+}
+
+//var dayOfTheWeek = (d.getDay()); this line is only left in because it works out what day it is and Id have to code it again if needed
+
+
 //Function to save the data
 function SaveData() {
 localStorage.setItem("savedTick", JSON.stringify(nowTick));
 localStorage.setItem("savedHunger", JSON.stringify(hungerLevel));
+localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
 }
 
 //Event listener for feed button press
@@ -68,7 +82,6 @@ canvas.addEventListener("click", function(e) {
  var y = Math.floor(e.clientY - rect.top);
  //alert("Mouse Position x: " + x + " y: " + y);
  //alert("Mouse Click");
- localStorage.clear();
  if (
   hungerLevel > ((graph_height / 3) * 2) &&
   x >= feedButtonX &&
@@ -81,7 +94,6 @@ canvas.addEventListener("click", function(e) {
  }
 });
 
-//Displays the words "Seconds Away:" and the value of variable awayTick
 function draw() {
  ctx.font = "8px Arial";
  ctx.fillStyle = "#0095DD";
@@ -95,9 +107,9 @@ function draw() {
 
  //Draw nourishment graph - Feed once every 24 hours
  //x, y start of gradient, then x, y end of gradient
- my_gradient.addColorStop(0, "#5cb658");
- my_gradient.addColorStop(0.66, "#ffad38");
- my_gradient.addColorStop(1, "#f40039");
+ my_gradient.addColorStop(0, 'rgba(92, 182, 88, 0.9)');
+ my_gradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.9)');
+ my_gradient.addColorStop(1, 'rgba(244, 0, 5, 0.9)');
  ctx.fillStyle = my_gradient;
  ctx.fillRect((feedButtonX + 2), (feedButtonY + 18), 4, (-Math.abs(graph_height) + hungerLevel)); //x, y co-ords of box then width, height
 
@@ -111,6 +123,7 @@ window.onunload = function() {
 }
 
 LoadData();
+getTuesday();
 draw();
 
 </script>
