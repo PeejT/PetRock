@@ -3,10 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <title>Pauls Canvas Workshop</title>
-	<style>
-	* { padding: 0; margin: 0; }
-	canvas { background: #eee; display: block; margin: 0 auto; }
-	</style>
+	<style>* { padding: 0; margin: 0; } canvas { background: #eee; display: block; margin: 0 auto; } </style>
 </head>
 <body>
 <canvas id="myCanvas" width="480" height="320"></canvas>
@@ -21,27 +18,39 @@ var awayTick;
 var hungerLevel;
 var dataHunger;
 var graph_height = 16;
-var inadayTick = 86400; //or inadayTick*1000 = milliseconds in a day
 var tuesdayInMiliseconds;
 var nowTick = Date.now();
-var feedButtonX = 8; // Used for x of both feed bar and surrounding box/button
-var feedButtonY = 6; // Used for Y of both feed bar and surrounding box/button
-var feedButtonW = 34; // Used for width of both feed bar and surrounding box/button
-var feedButtonH = graph_height + 4; // Used for height of both feed bar and surrounding box/button
-var my_gradient = ctx.createLinearGradient((feedButtonX + 2), (feedButtonY), (feedButtonX + 6), (feedButtonY + 18));
+var ticks = {day: 86400000, week: 604800000, overAWeek: 691200000};
+var feedButton = {x: 8, y: 6, w: 34};
+var feedButtonH = graph_height + 4;
+var my_gradient = ctx.createLinearGradient((feedButton.x + 2), (feedButton.y), (feedButton.x + 6), (feedButton.y + 18));
 
-//Load the data if localStorage enabled
+//Load the data
 function LoadData() {
 if(!!window.localStorage){
 dataTick = JSON.parse(localStorage.getItem("savedTick"));
 dataHunger = JSON.parse(localStorage.getItem("savedHunger"));
 tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
-awayTick = Math.round((nowTick - dataTick) / 1000); // This works out the difference between NOW time and retrived tick counter in seconds
-hungerLevel = dataHunger - (-Math.abs(awayTick / inadayTick) * graph_height); //This works out difference between how long you've been gone and DAY seconds
-  }
-else{
-    alert("No Web Storage without HTTP");
-  }
+awayTick = Math.round((nowTick - dataTick) / 1000);
+hungerLevel = dataHunger - (-Math.abs(awayTick / (ticks.day/1000)) * graph_height);
+}
+ else{
+ alert("No Web Storage without HTTP");
+ }
+}
+
+//Work out when Tuesday is.
+function getIntervals(){
+var d=new Date();
+
+var dayOfTheWeek = (d.getDay());
+   if (dayOfTheWeek == 3 && (nowTick - dataTick) >= ticks.overAWeek)
+   {
+   alert("You missed last Tuesday's update");
+   }
+d.setDate((2-d.getDay()+7)%7+d.getDate());
+var tuesday = d.toDateString();
+tuesdayInMiliseconds = new Date(tuesday).getTime();
 }
 
 function updateTick() {
@@ -50,30 +59,18 @@ function updateTick() {
 
 function updateHunger() {
 if (parseInt(hungerLevel) < 16){
-hungerLevel = (hungerLevel + graph_height / (inadayTick*1000));
+hungerLevel = (hungerLevel + graph_height / (ticks.day));
 }
 else {
 	hungerLevel = 16;
     }
 }
 
-//This checks to see if today is Tuesday. If it isn't, work out when Tuesday is. If it is, there should be an else on the if to make rock happy
-function getTuesday(){
-var d=new Date();
-d.setDate((2-d.getDay()+7)%7+d.getDate());
-var tuesday = d.toDateString();
-tuesdayInMiliseconds = new Date(tuesday).getTime();
-}
-
-//var dayOfTheWeek = (d.getDay()); this line is only left in because it works out what day it is and Id have to code it again if needed
-
-
-//Function to save the data
-function SaveData() {
+window.onunload = function() {
 localStorage.setItem("savedTick", JSON.stringify(nowTick));
 localStorage.setItem("savedHunger", JSON.stringify(hungerLevel));
 localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
-}
+};
 
 //Event listener for feed button press
 canvas.addEventListener("click", function(e) {
@@ -84,12 +81,11 @@ canvas.addEventListener("click", function(e) {
  //alert("Mouse Click");
  if (
   hungerLevel > ((graph_height / 3) * 2) &&
-  x >= feedButtonX &&
-  x < feedButtonX + feedButtonW &&
-  y >= feedButtonY &&
-  y < feedButtonY + feedButtonH
+  x >= feedButton.x &&
+  x < feedButton.x + feedButton.w &&
+  y >= feedButton.y &&
+  y < feedButton.y + feedButtonH
  ) {
-  alert("Feed ME!");
   hungerLevel = 0;
  }
 });
@@ -99,31 +95,22 @@ function draw() {
  ctx.fillStyle = "#0095DD";
  ctx.clearRect(0, 0, canvas.width, canvas.height);
  ctx.fillText("Seconds Away: " + awayTick, 380, 10);
- ctx.fillText("Hunger: " + parseInt(hungerLevel), 380, 20);
- ctx.fillText("Tick: " + nowTick, 380, 30);
-
- ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22); //Feed grab_x, grab_y, grab_width_x, grab_width_y, position_x, position_y, scale_x, scale_y
- ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22); //Rock grab_x, grab_y, grab_width_x, grab_width_y, position_x, position_y, scale_x, scale_y
-
- //Draw nourishment graph - Feed once every 24 hours
- //x, y start of gradient, then x, y end of gradient
- my_gradient.addColorStop(0, 'rgba(92, 182, 88, 0.9)');
- my_gradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.9)');
- my_gradient.addColorStop(1, 'rgba(244, 0, 5, 0.9)');
+ ctx.fillText("Tick: " + nowTick, 380, 20);
+ ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
+ ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
+ my_gradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
+ my_gradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
+ my_gradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
  ctx.fillStyle = my_gradient;
- ctx.fillRect((feedButtonX + 2), (feedButtonY + 18), 4, (-Math.abs(graph_height) + hungerLevel)); //x, y co-ords of box then width, height
+ ctx.fillRect((feedButton.x + 2), (feedButton.y + 18), 4, (-Math.abs(graph_height) + hungerLevel));
 
 requestAnimationFrame(draw);
 updateTick();
 updateHunger();
-
-window.onunload = function() {
-    SaveData();
-    };
 }
 
 LoadData();
-getTuesday();
+getIntervals();
 draw();
 
 </script>
