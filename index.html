@@ -15,8 +15,8 @@ var img = new Image();
 img.src = "Images/Sprites2.png";
 var dataTick;
 var awayTick;
-var hungerLevel;
-var dataHunger;
+var attentionLevel;
+var dataAttention;
 var graph_height = 16;
 var tuesdayInMiliseconds;
 var nowTick = Date.now();
@@ -30,10 +30,10 @@ var MissedItBy;
 function LoadData() {
 if(!!window.localStorage){
 dataTick = JSON.parse(localStorage.getItem("savedTick"));
-dataHunger = JSON.parse(localStorage.getItem("savedHunger"));
+dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
 tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
 awayTick = Math.round((nowTick - dataTick) / 1000);
-hungerLevel = dataHunger - (-Math.abs(awayTick / (ticks.day/1000)) * graph_height);
+attentionLevel = dataAttention - (-Math.abs(awayTick / (ticks.day/1000)) * graph_height);
 }
  else{
  alert("No Web Storage without HTTP");
@@ -43,12 +43,13 @@ hungerLevel = dataHunger - (-Math.abs(awayTick / (ticks.day/1000)) * graph_heigh
 //Work out forfeits.
 function getIntervals(){
 var d=new Date();
+var interval;
 var dayOfTheWeek = (d.getDay());
    if (dayOfTheWeek !== 3 && (nowTick - dataTick) < ticks.overAWeek) //If it's NOT Wednesday and you've NOT been gone for over a week...
    {
 	   if (dayOfTheWeek == 2)
 	   {
-		var interval = 9;
+		interval = 9;
 		alert("YEAH, proper FAN!"); //If it's Tuesday, turn on hourly star rewards, proper fan!
 	   } else
 		   {
@@ -60,7 +61,7 @@ var dayOfTheWeek = (d.getDay());
 				{
 				MissedItBy = dayOfTheWeek + 5;
 				}
-				var interval = 2;
+				interval = 2;
 				alert ("The update was " + MissedItBy + " days ago");   
 		   }
    } else
@@ -78,18 +79,18 @@ function updateTick() {
  nowTick = Date.now();
 }
 
-function updateHunger() {
-if (parseInt(hungerLevel) < 16){
-hungerLevel = (hungerLevel + graph_height / (ticks.day));
+function updateAttention() {
+if (parseInt(attentionLevel) < 16){
+attentionLevel = (attentionLevel + graph_height / (ticks.day));
 }
 else {
-	hungerLevel = 16;
+	attentionLevel = 16;
     }
 }
 
 window.onunload = function() {
 localStorage.setItem("savedTick", JSON.stringify(nowTick));
-localStorage.setItem("savedHunger", JSON.stringify(hungerLevel));
+localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
 localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
 };
 
@@ -101,13 +102,13 @@ canvas.addEventListener("click", function(e) {
  //alert("Mouse Position x: " + x + " y: " + y);
  //alert("Mouse Click");
  if (
-  hungerLevel > ((graph_height / 3) * 2) &&
+  attentionLevel > ((graph_height / 3) * 2) &&
   x >= feedButton.x &&
   x < feedButton.x + feedButton.w &&
   y >= feedButton.y &&
   y < feedButton.y + feedButtonH
  ) {
-  hungerLevel = 0;
+  attentionLevel = 0;
  }
 });
 
@@ -123,11 +124,11 @@ function draw() {
  my_gradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
  my_gradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
  ctx.fillStyle = my_gradient;
- ctx.fillRect((feedButton.x + 2), (feedButton.y + 18), 4, (-Math.abs(graph_height) + hungerLevel));
+ ctx.fillRect((feedButton.x + 2), (feedButton.y + 18), 4, (-Math.abs(graph_height) + attentionLevel));
 
 requestAnimationFrame(draw);
 updateTick();
-updateHunger();
+updateAttention();
 }
 
 LoadData();
