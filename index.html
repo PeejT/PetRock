@@ -24,6 +24,7 @@ var ticks = {day: 86400000, week: 604800000, overAWeek: 691200000};
 var feedButton = {x: 8, y: 6, w: 34};
 var feedButtonH = graph_height + 4;
 var my_gradient = ctx.createLinearGradient((feedButton.x + 2), (feedButton.y), (feedButton.x + 6), (feedButton.y + 18));
+var MissedItBy;
 
 //Load the data
 function LoadData() {
@@ -39,18 +40,38 @@ hungerLevel = dataHunger - (-Math.abs(awayTick / (ticks.day/1000)) * graph_heigh
  }
 }
 
-//Work out when Tuesday is.
+//Work out forfeits.
 function getIntervals(){
 var d=new Date();
-
 var dayOfTheWeek = (d.getDay());
-   if (dayOfTheWeek == 3 && (nowTick - dataTick) >= ticks.overAWeek)
+   if (dayOfTheWeek !== 3 && (nowTick - dataTick) < ticks.overAWeek) //If it's NOT Wednesday and you've NOT been gone for over a week...
    {
-   alert("You missed last Tuesday's update");
-   }
-d.setDate((2-d.getDay()+7)%7+d.getDate());
+	   if (dayOfTheWeek == 2)
+	   {
+		var interval = 9;
+		alert("YEAH, proper FAN!"); //If it's Tuesday, turn on hourly star rewards, proper fan!
+	   } else
+		   {
+				 if (dayOfTheWeek > 2 && dayOfTheWeek <=6) //If it's NOT Tueday, say how long ago Tuesday was.
+				 {
+				 MissedItBy = dayOfTheWeek - 2;
+				 }
+				if (dayOfTheWeek < 2)
+				{
+				MissedItBy = dayOfTheWeek + 5;
+				}
+				var interval = 2;
+				alert ("The update was " + MissedItBy + " days ago");   
+		   }
+   } else
+       {
+	   alert("You missed last Tuesday's update"); //If it IS Wednesday and you HAVE been gone for over a week, you missed Tuesdays update
+       }
+
+d.setDate((interval-d.getDay()+(interval+5))%(interval+5)+d.getDate());
 var tuesday = d.toDateString();
 tuesdayInMiliseconds = new Date(tuesday).getTime();
+alert("Don't forget to come back " + tuesday + " for another update!");
 }
 
 function updateTick() {
