@@ -9,6 +9,9 @@
 <canvas id="myCanvas" width="480" height="320"></canvas>
 
 <script>
+//localStorage.removeItem("savedTick");
+//localStorage.removeItem("savedAttention");
+//localStorage.removeItem("savedTuesday");
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 var img = new Image();
@@ -19,116 +22,134 @@ var attentionLevel;
 var dataAttention;
 var graph_height = 16;
 var tuesdayInMiliseconds;
+var beenTold;
 var nowTick = Date.now();
-var ticks = {day: 86400000, week: 604800000, overAWeek: 691200000};
-var feedButton = {x: 8, y: 6, w: 34};
+var ticks = {
+    day: 86400000,
+    week: 604800000,
+    overAWeek: 691200000
+};
+var feedButton = {
+    x: 8,
+    y: 6,
+    w: 34
+};
 var feedButtonH = graph_height + 4;
 var my_gradient = ctx.createLinearGradient((feedButton.x + 2), (feedButton.y), (feedButton.x + 6), (feedButton.y + 18));
 var MissedItBy;
 
 //Load the data
 function LoadData() {
-if(!!window.localStorage){
-dataTick = JSON.parse(localStorage.getItem("savedTick"));
-dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
-tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
-awayTick = Math.round((nowTick - dataTick) / 1000);
-attentionLevel = dataAttention - (-Math.abs(awayTick / (ticks.day/1000)) * graph_height);
-}
- else{
- alert("No Web Storage without HTTP");
- }
-}
-
-//Work out forfeits.
-function getIntervals(){
-var d=new Date();
-var interval;
-var dayOfTheWeek = (d.getDay());
-   if (dayOfTheWeek !== 3 && (nowTick - dataTick) < ticks.overAWeek) //If it's NOT Wednesday and you've NOT been gone for over a week...
-   {
-	   if (dayOfTheWeek == 2)
-	   {
-		interval = 9;
-		alert("YEAH, proper FAN!"); //If it's Tuesday, turn on hourly star rewards, proper fan!
-	   } else
-		   {
-				 if (dayOfTheWeek > 2 && dayOfTheWeek <=6) //If it's NOT Tueday, say how long ago Tuesday was.
-				 {
-				 MissedItBy = dayOfTheWeek - 2;
-				 }
-				if (dayOfTheWeek < 2)
-				{
-				MissedItBy = dayOfTheWeek + 5;
-				}
-				interval = 2;
-				alert ("The update was " + MissedItBy + " days ago");   
-		   }
-   } else
-       {
-	   alert("You missed last Tuesday's update"); //If it IS Wednesday and you HAVE been gone for over a week, you missed Tuesdays update
-       }
-
-d.setDate((interval-d.getDay()+(interval+5))%(interval+5)+d.getDate());
-var tuesday = d.toDateString();
-tuesdayInMiliseconds = new Date(tuesday).getTime();
-alert("Don't forget to come back " + tuesday + " for another update!");
-}
-
-function updateTick() {
- nowTick = Date.now();
-}
-
-function updateAttention() {
-if (parseInt(attentionLevel) < 16){
-attentionLevel = (attentionLevel + graph_height / (ticks.day));
-}
-else {
-	attentionLevel = 16;
+    if (!!window.localStorage) {
+        dataTick = JSON.parse(localStorage.getItem("savedTick"));
+        dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
+        tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
+        beenTold = JSON.parse(localStorage.getItem("beenTold"));
+        awayTick = Math.round((nowTick - dataTick) / 1000);
+        attentionLevel = dataAttention - (-Math.abs(awayTick / (ticks.day / 1000)) * graph_height);
+    } else {
+        alert("No Web Storage without HTTP");
     }
 }
 
-window.onunload = function() {
-localStorage.setItem("savedTick", JSON.stringify(nowTick));
-localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
-localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
+//Work out forfeits.
+function getIntervals() {
+    var d = new Date();
+    var interval;
+    var dayOfTheWeek = (d.getDay());
+
+    //Only do this bit if there's actually a value to Tuesday's date
+    if (tuesdayInMiliseconds !== "undefined" || tuesdayInMiliseconds !== "" || tuesdayInMiliseconds !== "null") {
+        //If it's Wednesday and time away is more than a just over a week  
+        if (dayOfTheWeek == 3 && (nowTick - dataTick) > ticks.overAWeek) {
+            alert("You missed last Tuesday's update");
+        } else { //Or else, it might be Tuesday. In which case, say how great the visitor is   
+            if (dayOfTheWeek == 2) {
+                beenTold = "false";
+                alert("YEAH, proper FAN!"); //Should turn on hourly star rewards, proper fan!
+            } else {
+                if (beenTold == "false") {
+                    if (dayOfTheWeek > 2 && dayOfTheWeek <= 6) //Or else, it might NOT Tueday, say how long ago Tuesday was.
+                    {
+                        MissedItBy = dayOfTheWeek - 2;
+                    }
+                    if (dayOfTheWeek < 2) {
+                        MissedItBy = dayOfTheWeek + 5;
+                    }
+                    beenTold = "true";
+                    alert("The update was " + MissedItBy + " days ago");
+                }
+            }
+        }
+    } else {
+        //If it gets here it means you've never visited before
+        alert("First time, huh?");
+    }
+    if (beenTold == "false") {
+        interval = 9;
+    } else {
+        interval = 2;
+    }
+    d.setDate((interval - d.getDay() + (interval + 5)) % (interval + 5) + d.getDate());
+    var tuesday = d.toDateString();
+    tuesdayInMiliseconds = new Date(tuesday).getTime();
+    alert("Don't forget to come back " + tuesday + " for another update!");
+}
+
+function updateTick() {
+    nowTick = Date.now();
+}
+
+function updateAttention() {
+    if (parseInt(attentionLevel) < 16) {
+        attentionLevel = (attentionLevel + graph_height / (ticks.day));
+    } else {
+        attentionLevel = 16;
+    }
+}
+
+window.onunload = function () {
+    localStorage.setItem("savedTick", JSON.stringify(nowTick));
+    localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
+    localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
+    localStorage.setItem("beenTold", JSON.stringify(beenTold));
 };
 
 //Event listener for feed button press
-canvas.addEventListener("click", function(e) {
- var rect = canvas.getBoundingClientRect();
- var x = Math.floor(e.clientX - rect.left);
- var y = Math.floor(e.clientY - rect.top);
- //alert("Mouse Position x: " + x + " y: " + y);
- //alert("Mouse Click");
- if (
-  attentionLevel > ((graph_height / 3) * 2) &&
-  x >= feedButton.x &&
-  x < feedButton.x + feedButton.w &&
-  y >= feedButton.y &&
-  y < feedButton.y + feedButtonH
- ) {
-  attentionLevel = 0;
- }
+canvas.addEventListener("click", function (e) {
+    var rect = canvas.getBoundingClientRect();
+    var x = Math.floor(e.clientX - rect.left);
+    var y = Math.floor(e.clientY - rect.top);
+    //alert("Mouse Position x: " + x + " y: " + y);
+    //alert("Mouse Click");
+    if (
+        attentionLevel > ((graph_height / 3) * 2) &&
+        x >= feedButton.x &&
+        x < feedButton.x + feedButton.w &&
+        y >= feedButton.y &&
+        y < feedButton.y + feedButtonH
+    ) {
+        attentionLevel = 0;
+    }
 });
 
 function draw() {
- ctx.font = "8px Arial";
- ctx.fillStyle = "#0095DD";
- ctx.clearRect(0, 0, canvas.width, canvas.height);
- ctx.fillText("Seconds Away: " + awayTick, 380, 10);
- ctx.fillText("Tick: " + nowTick, 380, 20);
- ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
- ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
- my_gradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
- my_gradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
- my_gradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
- ctx.fillStyle = my_gradient;
- ctx.fillRect((feedButton.x + 2), (feedButton.y + 18), 4, (-Math.abs(graph_height) + attentionLevel));
+    ctx.font = "8px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillText("Seconds Away: " + awayTick, 380, 10);
+    ctx.fillText("Tick: " + nowTick, 380, 20);
+    ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
+    ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
+    my_gradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
+    my_gradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
+    my_gradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
+    ctx.fillStyle = my_gradient;
+    ctx.fillRect((feedButton.x + 2), (feedButton.y + 18), 4, (-Math.abs(graph_height) + attentionLevel));
 
-requestAnimationFrame(draw);
-updateTick();
-updateAttention();
+    requestAnimationFrame(draw);
+    updateTick();
+    updateAttention();
 }
 
 LoadData();
