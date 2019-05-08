@@ -59,7 +59,7 @@ function getIntervals() {
     var dayOfTheWeek = (d.getDay());
 
     //Only do this bit if there's actually a value to Tuesday's date
-    if (tuesdayInMiliseconds !== "undefined" || tuesdayInMiliseconds !== "" || tuesdayInMiliseconds !== "null") {
+    if (tuesdayInMiliseconds !== undefined || tuesdayInMiliseconds !== "" || tuesdayInMiliseconds !== null) {
         //If it's Wednesday and time away is more than a just over a week  
         if (dayOfTheWeek == 3 && (nowTick - dataTick) > ticks.overAWeek) {
             alert("You missed last Tuesday's update");
