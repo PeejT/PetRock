@@ -12,13 +12,14 @@
 //localStorage.removeItem("savedTick");
 //localStorage.removeItem("savedAttention");
 //localStorage.removeItem("savedTuesday");
+//localStorage.removeItem("beenTold");
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 var img = new Image();
 img.src = "Images/Sprites2.png";
 var dataTick;
 var awayTick;
-var attentionLevel;
+var attentionLevel = 0;
 var dataAttention;
 var graph_height = 16;
 var tuesdayInMiliseconds;
@@ -32,10 +33,17 @@ var ticks = {
 var feedButton = {
     x: 8,
     y: 6,
-    w: 34
+    w: 34,
+	h: 20
 };
-var feedButtonH = graph_height + 4;
-var my_gradient = ctx.createLinearGradient((feedButton.x + 2), (feedButton.y), (feedButton.x + 6), (feedButton.y + 18));
+var up = {
+    x: 53,
+    y: 11,
+    t: 1 //originally 0.4
+};
+var attentionGradient = ctx.createLinearGradient(10, 6, 14, 24);
+var clicked = "nope";
+var mousecount = 0;
 var MissedItBy;
 
 //Load the data
@@ -44,51 +52,62 @@ function LoadData() {
         dataTick = JSON.parse(localStorage.getItem("savedTick"));
         dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
         tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
-        beenTold = JSON.parse(localStorage.getItem("beenTold"));
+        beenTold = localStorage.getItem("beenTold"); // With this line removed, the whole thing works well... because it's not loading NOTHING!
         awayTick = Math.round((nowTick - dataTick) / 1000);
         attentionLevel = dataAttention - (-Math.abs(awayTick / (ticks.day / 1000)) * graph_height);
+        attentionLevel = 13;
     } else {
         alert("No Web Storage without HTTP");
     }
 }
+
+// I know what's wrong with this bit.
+// The variable beenTold gets set depending on the value of beenTold!
+// Therefore the line WAY up there that loads beenTold loads nothing.
+// Checks the value of beenTold, which is nothing, so beenTold doesn't change!!
+// While experiemnting, I set a value for beenTold, which will make the program run now...
+// But really, it's very wrong.
 
 //Work out forfeits.
 function getIntervals() {
     var d = new Date();
     var interval;
     var dayOfTheWeek = (d.getDay());
-
     //Only do this bit if there's actually a value to Tuesday's date
-    if (tuesdayInMiliseconds == undefined || tuesdayInMiliseconds == "" || tuesdayInMiliseconds == null) {
-        alert("First time, huh?");
+    if (tuesdayInMiliseconds === undefined || tuesdayInMiliseconds === "" || tuesdayInMiliseconds === null) {
+        beenTold = "nope";
+		alert("First time, huh?");
     } else {
-        //If it's Wednesday and time away is more than a just over a week  
         if (dayOfTheWeek == 3 && (nowTick - dataTick) > ticks.overAWeek) {
             alert("You missed last Tuesday's update");
-        } else { //Or else, it might be Tuesday. In which case, say how great the visitor is   
-            if (dayOfTheWeek == 2) {
-                beenTold = "false";
+        } //If it's Wednesday and time away is more than a just over a week works perfectly
+        else { //This works if its a Tuesday, but when it's a Tuesday in two months time, for example, it still loves ya!
+            if (dayOfTheWeek == 2) { //Or else, it might be Tuesday. In which case, say how great the visitor is 
+                beenTold = "nope";
                 alert("YEAH, proper FAN!"); //Should turn on hourly star rewards, proper fan!
-            } else {
-                if (beenTold == "false") {
-                    if (dayOfTheWeek > 2 && dayOfTheWeek <= 6) //Or else, it might NOT Tueday, say how long ago Tuesday was.
-                    {
-                        MissedItBy = dayOfTheWeek - 2;
-                    }
-                    if (dayOfTheWeek < 2) {
-                        MissedItBy = dayOfTheWeek + 5;
-                    }
-                    beenTold = "true";
-                    alert("The update was " + MissedItBy + " days ago");
+            }
+
+            if (beenTold == "nope") {
+                if (dayOfTheWeek > 2 && dayOfTheWeek <= 6) { //Or else, it might NOT Tueday, say how long ago Tuesday was.
+                    MissedItBy = dayOfTheWeek - 2;
                 }
+
+                if (dayOfTheWeek < 2) { //Still might NOT Tueday, say how long ago Tuesday was.
+                    MissedItBy = dayOfTheWeek + 5;
+                }
+
+                beenTold = "yep";
+                alert("The update was " + MissedItBy + " days ago");
             }
         }
     }
-    if (beenTold == "false") {
+
+    if (beenTold == "nope") {
         interval = 9;
     } else {
         interval = 2;
     }
+
     d.setDate((interval - d.getDay() + (interval + 5)) % (interval + 5) + d.getDate());
     var tuesday = d.toDateString();
     tuesdayInMiliseconds = new Date(tuesday).getTime();
@@ -111,8 +130,19 @@ window.onunload = function () {
     localStorage.setItem("savedTick", JSON.stringify(nowTick));
     localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
     localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
-    localStorage.setItem("beenTold", JSON.stringify(beenTold));
+    localStorage.setItem("beenTold", beenTold);
 };
+
+function clicker() {
+    if (clicked === "yep") {
+        setTimeout(function () {
+            ++mousecount;
+            clicked = "nope";
+            //This would go to spangle add number of clicks. Or might have another pause to allow for click stop
+            mousecount = 0;
+        }, 3000);
+    }
+}
 
 //Event listener for feed button press
 canvas.addEventListener("click", function (e) {
@@ -120,15 +150,21 @@ canvas.addEventListener("click", function (e) {
     var x = Math.floor(e.clientX - rect.left);
     var y = Math.floor(e.clientY - rect.top);
     //alert("Mouse Position x: " + x + " y: " + y);
-    //alert("Mouse Click");
     if (
-        attentionLevel > ((graph_height / 3) * 2) &&
+        //attentionLevel > 10.667 &&
         x >= feedButton.x &&
         x < feedButton.x + feedButton.w &&
         y >= feedButton.y &&
-        y < feedButton.y + feedButtonH
+        y < feedButton.y + feedButton.h
     ) {
-        attentionLevel = 0;
+        if (clicked === "yep") {
+            ++mousecount;
+        }
+
+        if (clicked === "nope") {
+            clicked = "yep";
+            clicker();
+        }
     }
 });
 
@@ -140,11 +176,17 @@ function draw() {
     ctx.fillText("Tick: " + nowTick, 380, 20);
     ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
     ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
-    my_gradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
-    my_gradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
-    my_gradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
-    ctx.fillStyle = my_gradient;
-    ctx.fillRect((feedButton.x + 2), (feedButton.y + 18), 4, (-Math.abs(graph_height) + attentionLevel));
+    ctx.save();
+    ctx.globalAlpha = up.t;
+    ctx.drawImage(img, 0, 46, 10, 10, up.x, up.y, 10, 10);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(92,182,88,0.3)';
+    ctx.fillRect(feedButton.x, feedButton.y, feedButton.w, 22);
+    attentionGradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
+    attentionGradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
+    attentionGradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
+    ctx.fillStyle = attentionGradient;
+    ctx.fillRect(10, 24, 4, (-Math.abs(graph_height) + attentionLevel));
 
     requestAnimationFrame(draw);
     updateTick();
@@ -154,7 +196,6 @@ function draw() {
 LoadData();
 getIntervals();
 draw();
-
 
 </script>
 </body>
