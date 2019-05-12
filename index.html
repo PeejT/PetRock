@@ -10,7 +10,6 @@
 <canvas id="myCanvas" width="480" height="320"></canvas>
 
 <script>
-
 //localStorage.removeItem("savedTick");
 //localStorage.removeItem("savedAttention");
 //localStorage.removeItem("savedTuesday");
@@ -37,7 +36,7 @@ var feedButton = {
     x: 8,
     y: 6,
     w: 34,
-	h: 20
+    h: 20
 };
 var up = {
     x: 53,
@@ -72,7 +71,7 @@ function getIntervals() {
     //Only do this bit if there's actually a value to Tuesday's date
     if (tuesdayInMiliseconds === undefined || tuesdayInMiliseconds === "" || tuesdayInMiliseconds === null) {
         beenTold = "nope"; // Added this recently to eradicate the problem of beenTold having no value for the ifs lower down. Observe
-		alert("First time, huh?");
+        alert("First time, huh?");
     } else {
         if (dayOfTheWeek == 3 && (nowTick - dataTick) > ticks.overAWeek) {
             alert("You missed last Tuesday's update");
@@ -140,18 +139,7 @@ function clicker() {
     }
 }
 
-canvas.addEventListener("touchstart", myFunction);
-
-
-function myFunction() {
-	alert("New touched screen");
-}
-
-//canvas.addEventListener('touchstart', function() {
-//alert("Touched");
-//});
-
-//Event listener for feed button press
+//Event listener for feed button press mouse click
 canvas.addEventListener('click', function (e) {
     var rect = canvas.getBoundingClientRect();
     var x = Math.floor(e.clientX - rect.left);
@@ -166,7 +154,7 @@ canvas.addEventListener('click', function (e) {
     ) {
         if (clicked === "yep") {
             ++mousecount;
-			addPlus = new Plus(up.x, up.y, 4, 4);
+            addPlus = new Plus(up.x, up.y, 4, 4);
         }
 
         if (clicked === "nope") {
@@ -176,17 +164,49 @@ canvas.addEventListener('click', function (e) {
     }
 });
 
+//Event listener for feed button press screen touch
+var clientX, clientY;
+canvas.addEventListener('touchstart', function (e) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+    var x = clientX;
+    var y = clientY;
+    if (
+        //attentionLevel > 10.667 &&
+        x >= feedButton.x &&
+        x < feedButton.x + feedButton.w &&
+        y >= feedButton.y &&
+        y < feedButton.y + feedButton.h
+    ) {
+        if (clicked === "yep") {
+            ++mousecount;
+            addPlus = new Plus(up.x, up.y, 4, 4);
+        }
+
+        if (clicked === "nope") {
+            clicked = "yep";
+            clicker();
+        }
+    }
+}, false);
+
+canvas.addEventListener('touchend', function (e) {
+    var deltaX, deltaY;
+    deltaX = e.changedTouches[0].clientX - clientX;
+    deltaY = e.changedTouches[0].clientY - clientY;
+}, false);
+
 function Plus(x, y, velX, velY) {
-  this.x = x;
-  this.y = y;
-  this.velX = velX;
-  this.velY = velY;
+    this.x = x;
+    this.y = y;
+    this.velX = velX;
+    this.velY = velY;
 }
 
-  Plus.prototype.draw = function() {
+Plus.prototype.draw = function () {
     ctx.save();
-    ctx.globalAlpha = up.t;	
-	ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10);
+    ctx.globalAlpha = up.t;
+    ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10);
     ctx.restore();
 };
 
@@ -205,7 +225,9 @@ function draw() {
     attentionGradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
     ctx.fillStyle = attentionGradient;
     ctx.fillRect(10, 24, 4, (-Math.abs(graph_height) + attentionLevel));
-    if (mousecount > 0) { addPlus.draw(); }
+    if (mousecount > 0) {
+        addPlus.draw();
+    }
 
     requestAnimationFrame(draw);
     updateTick();
@@ -215,6 +237,7 @@ function draw() {
 LoadData();
 getIntervals();
 draw();
+
 
 </script>
 </body>
