@@ -10,6 +10,7 @@
 <canvas id="myCanvas" width="480" height="320"></canvas>
 
 <script>
+
 //localStorage.removeItem("savedTick");
 //localStorage.removeItem("savedAttention");
 //localStorage.removeItem("savedTuesday");
@@ -139,13 +140,19 @@ function clicker() {
     }
 }
 
-window.addEventListener('touchstart', function() {
-  // the user touched the screen!
-  alert("Touched");
-});
+canvas.addEventListener("touchstart", myFunction);
+
+
+function myFunction() {
+	alert("New touched screen");
+}
+
+//canvas.addEventListener('touchstart', function() {
+//alert("Touched");
+//});
 
 //Event listener for feed button press
-canvas.addEventListener("click", function (e) {
+canvas.addEventListener('click', function (e) {
     var rect = canvas.getBoundingClientRect();
     var x = Math.floor(e.clientX - rect.left);
     var y = Math.floor(e.clientY - rect.top);
@@ -181,7 +188,7 @@ function Plus(x, y, velX, velY) {
     ctx.globalAlpha = up.t;	
 	ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10);
     ctx.restore();
-}
+};
 
 function draw() {
     ctx.font = "8px Arial";
@@ -198,7 +205,7 @@ function draw() {
     attentionGradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
     ctx.fillStyle = attentionGradient;
     ctx.fillRect(10, 24, 4, (-Math.abs(graph_height) + attentionLevel));
-    if (mousecount > 0) { addPlus.draw() }
+    if (mousecount > 0) { addPlus.draw(); }
 
     requestAnimationFrame(draw);
     updateTick();
