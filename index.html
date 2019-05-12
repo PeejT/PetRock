@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <title>Pauls Canvas Workshop</title>
 	<style>* { padding: 0; margin: 0; } canvas { background: #eee; display: block; margin: 0 auto; } </style>
+	<meta name="viewport" content="width=device-width, user-scalable=no">
 </head>
 <body>
 <canvas id="myCanvas" width="480" height="320"></canvas>
@@ -24,6 +25,7 @@ var dataAttention;
 var graph_height = 16;
 var tuesdayInMiliseconds;
 var beenTold;
+var addPlus;
 var nowTick = Date.now();
 var ticks = {
     day: 86400000,
@@ -39,7 +41,7 @@ var feedButton = {
 var up = {
     x: 53,
     y: 11,
-    t: 1 //originally 0.4
+    t: 0.4
 };
 var attentionGradient = ctx.createLinearGradient(10, 6, 14, 24);
 var clicked = "nope";
@@ -52,7 +54,7 @@ function LoadData() {
         dataTick = JSON.parse(localStorage.getItem("savedTick"));
         dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
         tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
-        beenTold = localStorage.getItem("beenTold"); // With this line removed, the whole thing works well... because it's not loading NOTHING!
+        beenTold = localStorage.getItem("beenTold");
         awayTick = Math.round((nowTick - dataTick) / 1000);
         attentionLevel = dataAttention - (-Math.abs(awayTick / (ticks.day / 1000)) * graph_height);
         attentionLevel = 13;
@@ -61,13 +63,6 @@ function LoadData() {
     }
 }
 
-// I know what's wrong with this bit.
-// The variable beenTold gets set depending on the value of beenTold!
-// Therefore the line WAY up there that loads beenTold loads nothing.
-// Checks the value of beenTold, which is nothing, so beenTold doesn't change!!
-// While experiemnting, I set a value for beenTold, which will make the program run now...
-// But really, it's very wrong.
-
 //Work out forfeits.
 function getIntervals() {
     var d = new Date();
@@ -75,7 +70,7 @@ function getIntervals() {
     var dayOfTheWeek = (d.getDay());
     //Only do this bit if there's actually a value to Tuesday's date
     if (tuesdayInMiliseconds === undefined || tuesdayInMiliseconds === "" || tuesdayInMiliseconds === null) {
-        beenTold = "nope";
+        beenTold = "nope"; // Added this recently to eradicate the problem of beenTold having no value for the ifs lower down. Observe
 		alert("First time, huh?");
     } else {
         if (dayOfTheWeek == 3 && (nowTick - dataTick) > ticks.overAWeek) {
@@ -159,6 +154,7 @@ canvas.addEventListener("click", function (e) {
     ) {
         if (clicked === "yep") {
             ++mousecount;
+			addPlus = new Plus(up.x, up.y, 4, 4);
         }
 
         if (clicked === "nope") {
@@ -168,6 +164,20 @@ canvas.addEventListener("click", function (e) {
     }
 });
 
+function Plus(x, y, velX, velY) {
+  this.x = x;
+  this.y = y;
+  this.velX = velX;
+  this.velY = velY;
+}
+
+  Plus.prototype.draw = function() {
+    ctx.save();
+    ctx.globalAlpha = up.t;	
+	ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10);
+    ctx.restore();
+}
+
 function draw() {
     ctx.font = "8px Arial";
     ctx.fillStyle = "#0095DD";
@@ -176,10 +186,6 @@ function draw() {
     ctx.fillText("Tick: " + nowTick, 380, 20);
     ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
     ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
-    ctx.save();
-    ctx.globalAlpha = up.t;
-    ctx.drawImage(img, 0, 46, 10, 10, up.x, up.y, 10, 10);
-    ctx.restore();
     ctx.fillStyle = 'rgba(92,182,88,0.3)';
     ctx.fillRect(feedButton.x, feedButton.y, feedButton.w, 22);
     attentionGradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
@@ -187,6 +193,7 @@ function draw() {
     attentionGradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
     ctx.fillStyle = attentionGradient;
     ctx.fillRect(10, 24, 4, (-Math.abs(graph_height) + attentionLevel));
+    if (mousecount > 0) { addPlus.draw() }
 
     requestAnimationFrame(draw);
     updateTick();
