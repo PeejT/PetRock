@@ -139,6 +139,11 @@ function clicker() {
     }
 }
 
+window.addEventListener('touchstart', function() {
+  // the user touched the screen!
+  alert("Touched");
+});
+
 //Event listener for feed button press
 canvas.addEventListener("click", function (e) {
     var rect = canvas.getBoundingClientRect();
