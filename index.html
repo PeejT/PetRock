@@ -7,7 +7,7 @@
 	<meta name="viewport" content="width=device-width, user-scalable=no">
 </head>
 <body>
-<canvas id="myCanvas" width="480" height="320"></canvas>
+<canvas id="myCanvas" width="240" height="160"></canvas>
 
 <script>
 //localStorage.removeItem("savedTick");
@@ -170,15 +170,10 @@ document.addEventListener("touchmove",function(){})
 canvas.addEventListener('touchstart', function (e) {
     clientX = e.touches[0].clientX;
     clientY = e.touches[0].clientY;
-    var x = clientX;
-    var y = clientY;
-    if (
-        //attentionLevel > 10.667 &&
-        x >= feedButton.x &&
-        x < feedButton.x + feedButton.w &&
-        y >= feedButton.y &&
-        y < feedButton.y + feedButton.h
-    ) {
+    var x = Math.floor(clientX);
+    var y = Math.floor(clientY);
+	alert(x);
+	alert(y);
         if (clicked === "yep") {
             ++mousecount;
             addPlus = new Plus(up.x, up.y, 4, 4);
@@ -188,7 +183,6 @@ canvas.addEventListener('touchstart', function (e) {
             clicked = "yep";
             clicker();
         }
-    }
 }, false);
 
 canvas.addEventListener('touchend', function (e) {
@@ -215,8 +209,8 @@ function draw() {
     ctx.font = "8px Arial";
     ctx.fillStyle = "#0095DD";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillText("Seconds Away: " + awayTick, 380, 10);
-    ctx.fillText("Tick: " + nowTick, 380, 20);
+    ctx.fillText("Sec Away: " + awayTick, 150, 10);
+    ctx.fillText("Tick: " + nowTick, 150, 20);
     ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
     ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
     ctx.fillStyle = 'rgba(92,182,88,0.3)';
