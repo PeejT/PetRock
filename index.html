@@ -25,7 +25,6 @@ var dataAttention;
 var graph_height = 16;
 var tuesdayInMiliseconds;
 var beenTold;
-var addPlus;
 var nowTick = Date.now();
 var ticks = {
     day: 86400000,
@@ -40,13 +39,34 @@ var feedButton = {
 };
 var up = {
     x: 53,
-    y: 11,
-    t: 0.4
+    y: 11
 };
 var attentionGradient = ctx.createLinearGradient(10, 6, 14, 24);
 var clicked = "nope";
-var mousecount = 0;
+var plusDataArray = [];
+var drawPlusNow = "nope";
 var MissedItBy;
+var loop = 0;
+var nowTickGrab = 0;
+
+// Define Plus constructor
+function Plus(x, y, velY) {
+    this.x = x;
+    this.y = y;
+    this.velY = velY;
+}
+
+// define Plus draw method
+Plus.prototype.drawPlus = function () {
+    ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10);
+};
+
+// define Plus update method
+Plus.prototype.update = function () {
+    if (this.y > 0) {
+        this.y += this.velY;
+    }
+};
 
 //Load the data
 function LoadData() {
@@ -82,7 +102,7 @@ function getIntervals() {
                 alert("YEAH, proper FAN!"); //Should turn on hourly star rewards, proper fan!
             }
 
-            if (beenTold == "nope") {
+            if (beenTold == "nope" && dayOfTheWeek !== 2) {
                 if (dayOfTheWeek > 2 && dayOfTheWeek <= 6) { //Or else, it might NOT Tueday, say how long ago Tuesday was.
                     MissedItBy = dayOfTheWeek - 2;
                 }
@@ -128,13 +148,30 @@ window.onunload = function () {
     localStorage.setItem("beenTold", beenTold);
 };
 
+var ii = 0;
+
+function tickInterval() {
+    nowTickGrab = nowTick + 200;
+    if (ii < plusDataArray.length) {
+        ii += 1;
+    }
+}
+
 function clicker() {
     if (clicked === "yep") {
         setTimeout(function () {
-            ++mousecount;
             clicked = "nope";
-            //This would go to spangle add number of clicks. Or might have another pause to allow for click stop
-            mousecount = 0;
+            drawPlusNow = "yep";
+            tickInterval();
+
+            // I really only want to start the affection counter pause when the last plus has gone offscreen.
+            // Not only will it look better. The user runs out of 'draw time' quicker than he runs out of 'click time'.
+            // Meaning, you can click 15 times, for example but you'll only have time to see 11 plus's!!!
+            setTimeout(function () {
+                drawPlusNow = "nope";
+                plusDataArray = [];
+                ii = 0;
+            }, 2200);
         }, 3000);
     }
 }
@@ -144,8 +181,10 @@ canvas.addEventListener('click', function (e) {
     var rect = canvas.getBoundingClientRect();
     var x = Math.floor(e.clientX - rect.left);
     var y = Math.floor(e.clientY - rect.top);
+    var plus = new Plus(up.x, up.y, -0.3);
     //alert("Mouse Position x: " + x + " y: " + y);
     if (
+        drawPlusNow !== "yep" &&
         //attentionLevel > 10.667 &&
         x >= feedButton.x &&
         x < feedButton.x + feedButton.w &&
@@ -153,10 +192,8 @@ canvas.addEventListener('click', function (e) {
         y < feedButton.y + feedButton.h
     ) {
         if (clicked === "yep") {
-            ++mousecount;
-            addPlus = new Plus(up.x, up.y, 4, 4);
+            plusDataArray.push(plus);
         }
-
         if (clicked === "nope") {
             clicked = "yep";
             clicker();
@@ -166,23 +203,15 @@ canvas.addEventListener('click', function (e) {
 
 //Event listener for feed button press screen touch
 var clientX, clientY;
-document.addEventListener("touchmove",function(){})
+document.addEventListener("touchmove", function () {});
 canvas.addEventListener('touchstart', function (e) {
     clientX = e.touches[0].clientX;
     clientY = e.touches[0].clientY;
-    var x = Math.floor(clientX);
-    var y = Math.floor(clientY);
-	alert(x);
-	alert(y);
-        if (clicked === "yep") {
-            ++mousecount;
-            addPlus = new Plus(up.x, up.y, 4, 4);
-        }
-
-        if (clicked === "nope") {
-            clicked = "yep";
-            clicker();
-        }
+    //var x = Math.floor(clientX);
+    //var y = Math.floor(clientY);
+    //alert(x);
+    //alert(y);
+    clicker();
 }, false);
 
 canvas.addEventListener('touchend', function (e) {
@@ -191,26 +220,15 @@ canvas.addEventListener('touchend', function (e) {
     deltaY = e.changedTouches[0].clientY - clientY;
 }, false);
 
-function Plus(x, y, velX, velY) {
-    this.x = x;
-    this.y = y;
-    this.velX = velX;
-    this.velY = velY;
-}
-
-Plus.prototype.draw = function () {
-    ctx.save();
-    ctx.globalAlpha = up.t;
-    ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10);
-    ctx.restore();
-};
-
 function draw() {
     ctx.font = "8px Arial";
     ctx.fillStyle = "#0095DD";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillText("Sec Away: " + awayTick, 150, 10);
     ctx.fillText("Tick: " + nowTick, 150, 20);
+    ctx.fillText("Update: 21/05/2019 V1", 150, 30);
+    ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
+    ctx.fillText("Draw Plus Now: " + drawPlusNow, 150, 50);
     ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
     ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
     ctx.fillStyle = 'rgba(92,182,88,0.3)';
@@ -220,10 +238,20 @@ function draw() {
     attentionGradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
     ctx.fillStyle = attentionGradient;
     ctx.fillRect(10, 24, 4, (-Math.abs(graph_height) + attentionLevel));
-    if (mousecount > 0) {
-        addPlus.draw();
-    }
 
+    if (plusDataArray.length > 0 && drawPlusNow === "yep") {
+
+        if (nowTick > nowTickGrab) {
+            tickInterval();
+        }
+        for (var loop = 0; loop < ii; loop++) {
+            console.log(loop);
+            if (plusDataArray[loop].y > 2) { // Only bother drawing the plus if it's y axis is greater than 0
+                plusDataArray[loop].drawPlus();
+                plusDataArray[loop].update();
+            }
+        }
+    }
     requestAnimationFrame(draw);
     updateTick();
     updateAttention();
@@ -232,7 +260,6 @@ function draw() {
 LoadData();
 getIntervals();
 draw();
-
 
 </script>
 </body>
