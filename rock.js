@@ -15,10 +15,10 @@ const ticks = {
     overAWeek: 691200000,
 };
 const feedButton = {
-    x: 8,
-    y: 6,
-    w: 34,
-    h: 20,
+    x: 48,
+    y: 5,
+    w: 38,
+    h: 22,
 };
 
 let dataTick;
@@ -33,6 +33,8 @@ let plusDataArray = [];
 let drawPlusNow = 'nope';
 let MissedItBy;
 let nowTickGrab = 0;
+let radians;
+let degrees = 0; // change in relation to the progress circle in degrees
 
 // Define Plus constructor
 function Plus(x, y, velY) {
@@ -62,6 +64,7 @@ function LoadData() {
         beenTold = localStorage.getItem('beenTold');
         awayTick = Math.round((nowTick - dataTick) / 1000);
         attentionLevel = dataAttention - (-Math.abs(awayTick / (ticks.day / 1000)) * graphHeight);
+        attentionLevel = 16;
     } else {
         alert('No Web Storage without HTTP');
     }
@@ -77,8 +80,7 @@ function getIntervals() {
         alert('First time, huh?');
     } else if (dayOfTheWeek === 3 && (nowTick - dataTick) > ticks.overAWeek) {
         alert('You missed last Tuesdays update');
-    }
-    else { // This works if its a Tuesday, but when it's a Tuesday in two months time, for example, it still loves ya!
+    } else { // This works if its a Tuesday, but when it's a Tuesday in two months time, for example, it still loves ya!
         if (dayOfTheWeek === 2) {
             beenTold = 'nope';
             alert('YEAH, proper FAN!'); // Should turn on hourly star rewards, proper fan!
@@ -110,8 +112,15 @@ function getIntervals() {
     alert(`Don't forget to come back ${tuesday} for another update!`);
 }
 
+let clickTick = 0;
+
 function updateTick() {
     nowTick = Date.now();
+    if (clickTick > 1) { // If clickTick has a value, count it down to 1
+        clickTick -= 1;
+        degrees = clickTick;
+        clickTimerConditions(clickTick);
+    }
 }
 
 function updateAttention() {
@@ -130,28 +139,39 @@ window.onunload = function () {
 };
 
 let ii = 0;
+
 function tickInterval() {
-	nowTickGrab = nowTick + 200;
+    nowTickGrab = nowTick + 200;
     if (ii < plusDataArray.length) {
-		ii += 1;
-	}
+        ii += 1;
+    }
 }
 
 function clicker() {
-    if (clicked === 'yep') {
-        setTimeout(() => {
-            clicked = 'nope';
-            drawPlusNow = 'yep';
-            tickInterval();
-
-            setTimeout(() => {
-                drawPlusNow = 'nope';
-                plusDataArray = [];
-                ii = 0;
-            }, 600 * plusDataArray.length);
-        }, 3000);
+    if (clicked === 'yep' && clickTick === 0) { // If user has clicked, set clickTick counter to 300 to wait
+        clickTick = 360;
     }
 }
+
+function clickTimerConditions(ClickTickReaches1) { // checks to see if clickTick counter has reaches 1
+    if (ClickTickReaches1 === 1) {
+        clicked = 'nope';
+        drawPlusNow = 'yep';
+        waitForAllThePlus();
+        tickInterval();
+    }
+}
+
+function waitForAllThePlus() { // Set timer to wait for all the attention plus's to draw & reset everything when done
+    let timerId2 = setTimeout(() => {
+        drawPlusNow = 'nope';
+        plusDataArray = [];
+        clearTimeout(timerId2);
+        ii = 0;
+        clickTick = 0;
+    }, 600 * plusDataArray.length);
+}
+
 
 // Event listener for feed button press mouse click
 canvas.addEventListener('click', (e) => {
@@ -159,7 +179,7 @@ canvas.addEventListener('click', (e) => {
     const x = Math.floor(e.clientX - rect.left);
     const y = Math.floor(e.clientY - rect.top);
     const plus = new Plus(53, 11, -0.3);
-    // alert("Mouse Position x: " + x + " y: " + y);
+    //alert("Mouse Position x: " + x + " y: " + y);
     if (
         drawPlusNow !== 'yep' &&
         parseInt(attentionLevel) > 0 &&
@@ -188,7 +208,7 @@ canvas.addEventListener('touchstart', (e) => {
     const plus = new Plus(53, 11, -0.3);
     if (drawPlusNow !== 'yep' &&
         parseInt(attentionLevel) > 0
-       ) {
+    ) {
         if (clicked === 'yep') {
             plusDataArray.push(plus);
         }
@@ -200,35 +220,43 @@ canvas.addEventListener('touchstart', (e) => {
 }, false);
 
 function draw() {
+    radians = (Math.PI / 180) * degrees
+    ctx.lineWidth = 1;
     ctx.font = '8px Arial';
     ctx.fillStyle = '#0095DD';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillText(`Sec Away: ${awayTick}`, 150, 10);
-    ctx.fillText('Update: 22/05/2019 V1', 150, 20);
+    ctx.fillText('Update: 31/05/2019 V1', 150, 20);
+    ctx.fillText(`Sec Away: ${drawPlusNow}`, 150, 30);
     ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
     ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
-    ctx.fillStyle = 'rgba(92,182,88,0.3)';
-    ctx.fillRect(feedButton.x, feedButton.y, feedButton.w, 22);
+    //ctx.fillStyle = 'rgba(92,182,88,0.3)';
+    //ctx.fillRect(feedButton.x, feedButton.y, feedButton.w, 22);
     attentionGradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
     attentionGradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
     attentionGradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
     ctx.fillStyle = attentionGradient;
     ctx.fillRect(10, 24, 4, (-Math.abs(graphHeight) + attentionLevel));
+    ctx.beginPath();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgb(255, 173, 56)';
+    ctx.arc(66, 16, 5, 0, radians);
+    ctx.stroke();
 
     if (plusDataArray.length > 0 && drawPlusNow === 'yep') {
-        if (nowTick > nowTickGrab) {			
-			tickInterval();
+        if (nowTick > nowTickGrab) {
+            tickInterval();
         }
         for (let loop = 0; loop < ii; loop++) {
-            if((parseInt(plusDataArray[loop].y))===11 && parseInt(attentionLevel) > 0){
-				attentionLevel -=1;
-			}
-			if (plusDataArray[loop].y > 1) {
+            if ((parseInt(plusDataArray[loop].y)) === 11 && parseInt(attentionLevel) > 0) {
+                attentionLevel -= 1;
+            }
+            if (plusDataArray[loop].y > 1) {
                 plusDataArray[loop].drawPlus();
                 plusDataArray[loop].update();
-            } 
+            }
         }
-	}
+    }
     requestAnimationFrame(draw);
     updateTick();
     updateAttention();
