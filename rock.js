@@ -1,4 +1,7 @@
 'use strict';
+/*jshint esversion: 6 */
+/*global localStorage: false, console: false, alert: false,
+Image: false, setTimeout: false, document: false, window: false */
 // localStorage.removeItem("savedTick");
 // localStorage.removeItem("savedAttention");
 // localStorage.removeItem("savedTuesday");
@@ -96,7 +99,7 @@ function getIntervals() {
             }
 
             beenTold = 'yep';
-            alert(`The update was ${MissedItBy} days ago`);
+            alert('The update was ' + MissedItBy + ' days ago');
         }
     }
 
@@ -109,7 +112,7 @@ function getIntervals() {
     d.setDate((interval - d.getDay() + (interval + 5)) % (interval + 5) + d.getDate());
     const tuesday = d.toDateString();
     tuesdayInMiliseconds = new Date(tuesday).getTime();
-    alert(`Don't forget to come back ${tuesday} for another update!`);
+    alert('Dont forget to come back ' + tuesday + ' for another update!');
 }
 
 let clickTick = 0;
@@ -139,17 +142,24 @@ window.onunload = function () {
 };
 
 let ii = 0;
+let PlusArrayCount = 0;
 
 function tickInterval() {
-    nowTickGrab = nowTick + 200;
-    if (ii < plusDataArray.length) {
+    if (ii === PlusArrayCount && ii !== 0) {
+        plusDataArray = [];
+        ii = 0;
+        ShowTheHeart();
+        return;
+    }
+    nowTickGrab = nowTick + 400;
+    if (ii < PlusArrayCount) {
         ii += 1;
     }
 }
 
 function clicker() {
     if (clicked === 'yep' && clickTick === 0) { // If user has clicked, set clickTick counter to 300 to wait
-        clickTick = 360;
+        clickTick = 180;
     }
 }
 
@@ -157,21 +167,26 @@ function clickTimerConditions(ClickTickReaches1) { // checks to see if clickTick
     if (ClickTickReaches1 === 1) {
         clicked = 'nope';
         drawPlusNow = 'yep';
-        waitForAllThePlus();
+        degrees = 0;
+        PlusArrayCount = plusDataArray.length;
         tickInterval();
     }
 }
 
-function waitForAllThePlus() { // Set timer to wait for all the attention plus's to draw & reset everything when done
-    let timerId2 = setTimeout(() => {
-        drawPlusNow = 'nope';
-        plusDataArray = [];
-        clearTimeout(timerId2);
-        ii = 0;
-        clickTick = 0;
-    }, 600 * plusDataArray.length);
-}
+let lovedup = false;
 
+function ShowTheHeart() { // Set timer to pause before displaying the heart: 500Ms
+    setTimeout(function () {
+        lovedup = true;
+        setTimeout(function () {
+            drawPlusNow = 'nope';
+            clickTick = 0;
+            lovedup = false;
+            return;
+        }, 1000);
+        return;
+    }, 300);
+}
 
 // Event listener for feed button press mouse click
 canvas.addEventListener('click', (e) => {
@@ -219,19 +234,20 @@ canvas.addEventListener('touchstart', (e) => {
     }
 }, false);
 
+let loop = 0;
+
 function draw() {
-    radians = (Math.PI / 180) * degrees
+    radians = (Math.PI / 180) * (degrees * 2);
     ctx.lineWidth = 1;
     ctx.font = '8px Arial';
     ctx.fillStyle = '#0095DD';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillText(`Sec Away: ${awayTick}`, 150, 10);
+    ctx.fillText('Sec Away: ' + awayTick, 150, 10);
     ctx.fillText('Update: 31/05/2019 V1', 150, 20);
-    ctx.fillText(`Sec Away: ${drawPlusNow}`, 150, 30);
+    ctx.fillText('Draw Plus: ' + drawPlusNow, 150, 30);
+    ctx.fillText('Array Length: ' + plusDataArray.length, 150, 40);
     ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
     ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
-    //ctx.fillStyle = 'rgba(92,182,88,0.3)';
-    //ctx.fillRect(feedButton.x, feedButton.y, feedButton.w, 22);
     attentionGradient.addColorStop(0, 'rgba(92, 182, 88, 0.8)');
     attentionGradient.addColorStop(0.66, 'rgba(255, 173, 56, 0.8)');
     attentionGradient.addColorStop(1, 'rgba(244, 0, 5, 0.8)');
@@ -243,19 +259,26 @@ function draw() {
     ctx.arc(66, 16, 5, 0, radians);
     ctx.stroke();
 
+    if (lovedup === true) {
+        ctx.drawImage(img, 7, 3, 10, 10, 52, 8, 10, 10);
+    }
+
     if (plusDataArray.length > 0 && drawPlusNow === 'yep') {
         if (nowTick > nowTickGrab) {
             tickInterval();
         }
-        for (let loop = 0; loop < ii; loop++) {
+        for (loop = 0; loop < ii; loop++) {
             if ((parseInt(plusDataArray[loop].y)) === 11 && parseInt(attentionLevel) > 0) {
                 attentionLevel -= 1;
+                console.log("This should run the number of times clicked.");
             }
+
             if (plusDataArray[loop].y > 1) {
                 plusDataArray[loop].drawPlus();
                 plusDataArray[loop].update();
             }
         }
+
     }
     requestAnimationFrame(draw);
     updateTick();
