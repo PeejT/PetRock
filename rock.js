@@ -8,6 +8,9 @@ Image: false, setTimeout: false, document: false, window: false */
 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
+ctx.lineWidth = 1;
+ctx.font = "8px Arial";
+ctx.fillStyle = "#0095DD";
 var img = new Image();
 img.src = "Images/Sprites2.png";
 var graphHeight = 16;
@@ -64,8 +67,7 @@ function LoadData() {
         tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
         beenTold = localStorage.getItem("beenTold");
         awayTick = Math.round((nowTick - dataTick) / 1000);
-        attentionLevel =
-            dataAttention - -Math.abs(awayTick / (ticks.day / 1000)) * graphHeight;
+        attentionLevel = dataAttention + (awayTick / (ticks.day / 1000)) * graphHeight;
         attentionLevel = 16;
     } else {
         alert("No Web Storage without HTTP");
@@ -203,9 +205,7 @@ function ShowTheHeart() {
 }
 
 // Event listener for feed button press mouse click
-canvas.addEventListener(
-    "click",
-    function (e) {
+canvas.addEventListener("click", function (e) {
         var rect = canvas.getBoundingClientRect();
         var x = Math.floor(e.clientX - rect.left);
         var y = Math.floor(e.clientY - rect.top);
@@ -234,13 +234,8 @@ canvas.addEventListener(
 );
 
 // Event listener for feed button press screen touch
-var clientX, clientY;
 document.addEventListener("touchmove", function () {});
-canvas.addEventListener(
-    "touchstart",
-    function (e) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
+canvas.addEventListener("touchstart", function () {
         var plus = new Plus(53, 11, -0.3);
 
         if (drawPlusNow !== "yep" && parseInt(attentionLevel) > 0) {
@@ -256,18 +251,16 @@ canvas.addEventListener(
     },
     false
 );
+
 var loop = 0;
 
 function draw() {
     radians = (Math.PI / 180) * (degrees * 2);
-    ctx.lineWidth = 1;
-    ctx.font = "8px Arial";
-    ctx.fillStyle = "#0095DD";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillText("Sec Away: " + awayTick, 150, 10);
-    ctx.fillText("Update: 31/05/2019 V1", 150, 20);
-    ctx.fillText("Draw Plus: " + drawPlusNow, 150, 30);
-    ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
+    //ctx.fillText("Sec Away: " + awayTick, 150, 10);
+    //ctx.fillText("Update: 31/05/2019 V1", 150, 20);
+    //ctx.fillText("Draw Plus: " + drawPlusNow, 150, 30);
+    //ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
     ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
     ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
     attentionGradient.addColorStop(0, "rgba(92, 182, 88, 0.8)");
@@ -296,7 +289,6 @@ function draw() {
                 parseInt(attentionLevel) > 0
             ) {
                 attentionLevel -= 1;
-                console.log("This should run the number of times clicked.");
             }
 
             if (plusDataArray[loop].y > 1) {
@@ -313,4 +305,4 @@ function draw() {
 
 LoadData();
 getIntervals();
-draw();
+requestAnimationFrame(draw);
