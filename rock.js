@@ -152,13 +152,18 @@ window.onunload = function () {
     localStorage.setItem("beenTold", beenTold);
 };
 
+function empty() {
+    //empty array
+    plusDataArray.length = 0;
+}
+
 var ii = 0;
 var PlusArrayCount = 0;
 
 function tickInterval() {
     if (ii === PlusArrayCount && ii !== 0) {
-        plusDataArray = [];
         ii = 0;
+        empty();
         ShowTheHeart();
         return;
     }
