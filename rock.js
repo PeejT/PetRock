@@ -1,6 +1,7 @@
 "use strict";
 /*global localStorage: false, console: false, alert: false,
-Image: false, setTimeout: false, document: false, window: false */
+Image: false, setTimeout: false, document: false, window: false,
+requestAnimationFrame: false */
 // localStorage.removeItem("savedTick");
 // localStorage.removeItem("savedAttention");
 // localStorage.removeItem("savedTuesday");
@@ -50,8 +51,8 @@ function Plus(x, y, velY) {
 
 // define Plus draw method
 Plus.prototype.drawPlus = function () {
-    ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10);
-}; // define Plus update method
+    ctx.drawImage(img, 0, 46, 10, 10, this.x, this.y, 10, 10); // Plus
+};
 
 Plus.prototype.update = function () {
     if (this.y > 0) {
@@ -152,18 +153,13 @@ window.onunload = function () {
     localStorage.setItem("beenTold", beenTold);
 };
 
-function empty() {
-    //empty array
-    plusDataArray.length = 0;
-}
-
 var ii = 0;
 var PlusArrayCount = 0;
 
 function tickInterval() {
     if (ii === PlusArrayCount && ii !== 0) {
         ii = 0;
-        empty();
+        plusDataArray.length = 0;
         ShowTheHeart();
         return;
     }
@@ -203,9 +199,7 @@ function ShowTheHeart() {
             drawPlusNow = "nope";
             clickTick = 0;
             lovedup = false;
-            return;
         }, 1000);
-        return;
     }, 300);
 }
 
@@ -266,13 +260,13 @@ function draw() {
     //ctx.fillText("Update: 31/05/2019 V1", 150, 20);
     //ctx.fillText("Draw Plus: " + drawPlusNow, 150, 30);
     //ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
-    ctx.drawImage(img, 0, 0, 36, 22, 7, 5, 36, 22);
-    ctx.drawImage(img, 0, 23, 38, 22, 48, 6, 38, 22);
+    ctx.drawImage(img, 0, 0, 36, 22, 4, 6, 36, 22); // Status
+    ctx.drawImage(img, 0, 26, 36, 16, 39, 12, 36, 16); // Rock
     attentionGradient.addColorStop(0, "rgba(92, 182, 88, 0.8)");
     attentionGradient.addColorStop(0.66, "rgba(255, 173, 56, 0.8)");
     attentionGradient.addColorStop(1, "rgba(244, 0, 5, 0.8)");
     ctx.fillStyle = attentionGradient;
-    ctx.fillRect(10, 24, 4, -Math.abs(graphHeight) + attentionLevel);
+    ctx.fillRect(7, 25, 4, -Math.abs(graphHeight) + attentionLevel);
     ctx.beginPath();
     ctx.lineWidth = 5;
     ctx.strokeStyle = "rgb(255, 173, 56)";
@@ -280,7 +274,7 @@ function draw() {
     ctx.stroke();
 
     if (lovedup === true) {
-        ctx.drawImage(img, 7, 3, 10, 10, 52, 8, 10, 10);
+        ctx.drawImage(img, 8, 3, 9, 9, 52, 8, 9, 9); // Heart
     }
 
     if (plusDataArray.length > 0 && drawPlusNow === "yep") {
