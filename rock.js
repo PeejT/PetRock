@@ -263,6 +263,9 @@ canvas.addEventListener("touchstart", function () {
 );
 
 var loop = 0;
+attentionGradient.addColorStop(0, "rgba(92, 182, 88, 0.8)");
+attentionGradient.addColorStop(0.66, "rgba(255, 173, 56, 0.8)");
+attentionGradient.addColorStop(1, "rgba(244, 0, 5, 0.8)");
 
 function draw() {
     radians = (Math.PI / 180) * (degrees * 2);
@@ -273,9 +276,6 @@ function draw() {
     ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
     ctx.drawImage(img, 0, 0, 36, 22, 4, 6, 36, 22); // Status
     ctx.drawImage(img, 0, 26, 36, 16, 39, 12, 36, 16); // Rock
-    attentionGradient.addColorStop(0, "rgba(92, 182, 88, 0.8)");
-    attentionGradient.addColorStop(0.66, "rgba(255, 173, 56, 0.8)");
-    attentionGradient.addColorStop(1, "rgba(244, 0, 5, 0.8)");
     ctx.fillStyle = attentionGradient;
     ctx.fillRect(7, 25, 4, -Math.abs(graphHeight) + attentionLevel);
     ctx.beginPath();
