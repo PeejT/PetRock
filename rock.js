@@ -2,10 +2,11 @@
 /*global localStorage: false, console: false, alert: false,
 Image: false, setTimeout: false, document: false, window: false,
 requestAnimationFrame: false */
-// localStorage.removeItem("savedTick");
-// localStorage.removeItem("savedAttention");
-// localStorage.removeItem("savedTuesday");
-// localStorage.removeItem("beenTold");
+//localStorage.removeItem("savedTick");
+//localStorage.removeItem("savedAttention");
+//localStorage.removeItem("savedTuesday");
+//localStorage.removeItem("savedStarTick");
+//localStorage.removeItem("beenTold");
 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
@@ -16,29 +17,38 @@ var img = new Image();
 img.src = "Images/Sprites2.png";
 var graphHeight = 16;
 var attentionGradient = ctx.createLinearGradient(10, 6, 14, 24);
-var ticks = {
+var tickspan = {
     day: 86400000,
     week: 604800000,
     overAWeek: 691200000
 };
 var feedButton = {
-    x: 48,
-    y: 5,
-    w: 38,
+    x: 42,
+    y: 6,
+    w: 35,
     h: 22
 };
-var dataTick;
-var awayTick;
+
+var timers = {
+    dataTick: 0,
+    awayTick: 0,
+    nowTick: Date.now(),
+    nowTickGrab: 0,
+    starTick: 0
+};
+
+var flags = {
+    beenTold: "nope",
+    clicked: "nope",
+    drawPlusNow: "nope",
+    starNow: false
+};
+
 var attentionLevel = 0;
 var dataAttention;
 var tuesdayInMiliseconds;
-var beenTold;
-var nowTick = Date.now();
-var clicked = "nope";
 var plusDataArray = [];
-var drawPlusNow = "nope";
 var MissedItBy;
-var nowTickGrab = 0;
 var radians;
 var degrees = 0; // change in relation to the progress circle in degrees
 
@@ -63,12 +73,13 @@ Plus.prototype.update = function () {
 // Load the data
 function LoadData() {
     if (window.localStorage) {
-        dataTick = JSON.parse(localStorage.getItem("savedTick"));
+        timers.dataTick = JSON.parse(localStorage.getItem("savedTick"));
         dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
         tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
-        beenTold = localStorage.getItem("beenTold");
-        awayTick = Math.round((nowTick - dataTick) / 1000);
-        attentionLevel = dataAttention + (awayTick / (ticks.day / 1000)) * graphHeight;
+        timers.starTick = JSON.parse(localStorage.getItem("savedStarTick"));
+        flags.beenTold = localStorage.getItem("beenTold");
+        timers.awayTick = Math.round((timers.nowTick - timers.dataTick) / 1000);
+        attentionLevel = dataAttention + (timers.awayTick / (tickspan.day / 1000)) * graphHeight;
         attentionLevel = 16;
     } else {
         alert("No Web Storage without HTTP");
@@ -86,18 +97,26 @@ function getIntervals() {
         tuesdayInMiliseconds === "" ||
         tuesdayInMiliseconds === null
     ) {
-        beenTold = "nope";
+        flags.beenTold = "nope";
         alert("First time, huh?");
-    } else if (dayOfTheWeek === 3 && nowTick - dataTick > ticks.overAWeek) {
-        alert("You missed last Tuesdays update");
-    } else {
-        // This works if its a Tuesday, but when it's a Tuesday in two months time, for example, it still loves ya!
-        if (dayOfTheWeek === 2) {
-            beenTold = "nope";
-            alert("YEAH, proper FAN!"); // Should turn on hourly star rewards, proper fan!
-        }
+    }
 
-        if (beenTold === "nope" && dayOfTheWeek !== 2) {
+    if (dayOfTheWeek === 3 && timers.nowTick - timers.dataTick > tickspan.overAWeek) {
+        alert("You missed last Tuesdays update");
+    }
+
+    if (dayOfTheWeek === 2) { // If its Tuesday...
+        if (timers.nowTick > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
+            timers.starTick = timers.nowTick + 3600000; // set starTick to an hour from now for another star
+            flags.starNow = true;
+            alert("The time for a new star has passed");
+        }
+        flags.beenTold = "nope";
+    }
+
+    if (dayOfTheWeek !== 2) {
+        timers.starTick = null;
+        if (flags.beenTold === "nope") {
             if (dayOfTheWeek > 2 && dayOfTheWeek <= 6) {
                 MissedItBy = dayOfTheWeek - 2;
             }
@@ -106,12 +125,12 @@ function getIntervals() {
                 MissedItBy = dayOfTheWeek + 5;
             }
 
-            beenTold = "yep";
+            flags.beenTold = "yep";
             alert("The update was " + MissedItBy + " days ago");
         }
     }
 
-    if (beenTold === "nope") {
+    if (flags.beenTold === "nope") {
         interval = 9;
     } else {
         interval = 2;
@@ -128,7 +147,7 @@ function getIntervals() {
 var clickTick = 0;
 
 function updateTick() {
-    nowTick = Date.now();
+    timers.nowTick = Date.now();
 
     // If clickTick has a value, count it down to 1
     if (clickTick > 1) {
@@ -140,17 +159,18 @@ function updateTick() {
 
 function updateAttention() {
     if (parseInt(attentionLevel) < 16) {
-        attentionLevel += graphHeight / ticks.day;
+        attentionLevel += graphHeight / tickspan.day;
     } else {
         attentionLevel = 16;
     }
 }
 
 window.onunload = function () {
-    localStorage.setItem("savedTick", JSON.stringify(nowTick));
+    localStorage.setItem("savedTick", JSON.stringify(timers.nowTick));
     localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
     localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
-    localStorage.setItem("beenTold", beenTold);
+    localStorage.setItem("savedStarTick", JSON.stringify(timers.starTick));
+    localStorage.setItem("beenTold", flags.beenTold);
 };
 
 var ii = 0;
@@ -164,7 +184,7 @@ function tickInterval() {
         return;
     }
 
-    nowTickGrab = nowTick + 400;
+    timers.nowTickGrab = timers.nowTick + 400;
 
     if (ii < PlusArrayCount) {
         ii += 1;
@@ -172,17 +192,17 @@ function tickInterval() {
 }
 
 function clicker() {
-    if (clicked === "yep" && clickTick === 0) {
-        // If user has clicked, set clickTick counter to 300 to wait
+    if (flags.clicked === "yep" && clickTick === 0) {
         clickTick = 180;
     }
 }
 
+
+//Circular timer countdown
 function clickTimerConditions(ClickTickReaches1) {
-    // checks to see if clickTick counter has reaches 1
     if (ClickTickReaches1 === 1) {
-        clicked = "nope";
-        drawPlusNow = "yep";
+        flags.clicked = "nope";
+        flags.drawPlusNow = "yep";
         degrees = 0;
         PlusArrayCount = plusDataArray.length;
         tickInterval();
@@ -196,37 +216,36 @@ function ShowTheHeart() {
     setTimeout(function () {
         lovedup = true;
         setTimeout(function () {
-            drawPlusNow = "nope";
+            flags.drawPlusNow = "nope";
             clickTick = 0;
             lovedup = false;
         }, 1000);
     }, 300);
 }
 
+function addAPlus() {
+    flags.clicked = "yep";
+    var plus = new Plus(47, 11, -0.3);
+    plusDataArray.push(plus);
+    clicker();
+}
+
+
 // Event listener for feed button press mouse click
 canvas.addEventListener("click", function (e) {
         var rect = canvas.getBoundingClientRect();
         var x = Math.floor(e.clientX - rect.left);
         var y = Math.floor(e.clientY - rect.top);
-        var plus = new Plus(53, 11, -0.3);
         //alert("Mouse Position x: " + x + " y: " + y);
-
         if (
-            drawPlusNow !== "yep" &&
+            flags.drawPlusNow !== "yep" &&
             parseInt(attentionLevel) > 0 &&
             x >= feedButton.x &&
             x < feedButton.x + feedButton.w &&
             y >= feedButton.y &&
             y < feedButton.y + feedButton.h
         ) {
-            if (clicked === "yep") {
-                plusDataArray.push(plus);
-            }
-
-            if (clicked === "nope") {
-                clicked = "yep";
-                clicker();
-            }
+            addAPlus();
         }
     },
     false
@@ -235,17 +254,9 @@ canvas.addEventListener("click", function (e) {
 // Event listener for feed button press screen touch
 document.addEventListener("touchmove", function () {});
 canvas.addEventListener("touchstart", function () {
-        var plus = new Plus(53, 11, -0.3);
 
-        if (drawPlusNow !== "yep" && parseInt(attentionLevel) > 0) {
-            if (clicked === "yep") {
-                plusDataArray.push(plus);
-            }
-
-            if (clicked === "nope") {
-                clicked = "yep";
-                clicker();
-            }
+        if (flags.drawPlusNow !== "yep" && parseInt(attentionLevel) > 0) {
+            addAPlus();
         }
     },
     false
@@ -256,10 +267,10 @@ var loop = 0;
 function draw() {
     radians = (Math.PI / 180) * (degrees * 2);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    //ctx.fillText("Sec Away: " + awayTick, 150, 10);
-    //ctx.fillText("Update: 31/05/2019 V1", 150, 20);
-    //ctx.fillText("Draw Plus: " + drawPlusNow, 150, 30);
-    //ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
+    ctx.fillText("Now Tick: " + timers.nowTick, 100, 10);
+    ctx.fillText("Star Tick: " + timers.starTick, 100, 20);
+    ctx.fillText("clicked: " + flags.clicked, 150, 30);
+    ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
     ctx.drawImage(img, 0, 0, 36, 22, 4, 6, 36, 22); // Status
     ctx.drawImage(img, 0, 26, 36, 16, 39, 12, 36, 16); // Rock
     attentionGradient.addColorStop(0, "rgba(92, 182, 88, 0.8)");
@@ -268,17 +279,21 @@ function draw() {
     ctx.fillStyle = attentionGradient;
     ctx.fillRect(7, 25, 4, -Math.abs(graphHeight) + attentionLevel);
     ctx.beginPath();
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.strokeStyle = "rgb(255, 173, 56)";
-    ctx.arc(66, 16, 5, 0, radians);
+    ctx.arc(58, 20, 4, 0, radians);
     ctx.stroke();
 
     if (lovedup === true) {
-        ctx.drawImage(img, 8, 3, 9, 9, 52, 8, 9, 9); // Heart
+        ctx.drawImage(img, 8, 3, 9, 9, 47, 9, 9, 9); // Heart
     }
 
-    if (plusDataArray.length > 0 && drawPlusNow === "yep") {
-        if (nowTick > nowTickGrab) {
+    if (flags.starNow === true) {
+        ctx.drawImage(img, 24, 10, 9, 9, 66, 19, 9, 9); // Star
+    }
+
+    if (plusDataArray.length > 0 && flags.drawPlusNow === "yep") {
+        if (timers.nowTick > timers.nowTickGrab) {
             tickInterval();
         }
 
