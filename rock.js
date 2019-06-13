@@ -32,7 +32,6 @@ var feedButton = {
 var timers = {
     dataTick: 0,
     awayTick: 0,
-    nowTick: Date.now(),
     nowTickGrab: 0,
     starTick: 0
 };
@@ -49,7 +48,6 @@ var dataAttention;
 var tuesdayInMiliseconds;
 var plusDataArray = [];
 var MissedItBy;
-var radians;
 var degrees = 0; // change in relation to the progress circle in degrees
 
 // Define Plus constructor
@@ -78,7 +76,7 @@ function LoadData() {
         tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
         timers.starTick = JSON.parse(localStorage.getItem("savedStarTick"));
         flags.beenTold = localStorage.getItem("beenTold");
-        timers.awayTick = Math.round((timers.nowTick - timers.dataTick) / 1000);
+        timers.awayTick = Math.round((Date.now() - timers.dataTick) / 1000);
         attentionLevel = dataAttention + (timers.awayTick / (tickspan.day / 1000)) * graphHeight;
         attentionLevel = 16;
     } else {
@@ -101,13 +99,13 @@ function getIntervals() {
         alert("First time, huh?");
     }
 
-    if (dayOfTheWeek === 3 && timers.nowTick - timers.dataTick > tickspan.overAWeek) {
+    if (dayOfTheWeek === 3 && Date.now() - timers.dataTick > tickspan.overAWeek) {
         alert("You missed last Tuesdays update");
     }
 
     if (dayOfTheWeek === 2) { // If its Tuesday...
-        if (timers.nowTick > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
-            timers.starTick = timers.nowTick + 3600000; // set starTick to an hour from now for another star
+        if (Date.now() > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
+            timers.starTick = Date.now() + 3600000; // set starTick to an hour from now for another star
             flags.starNow = true;
             alert("The time for a new star has passed");
         }
@@ -146,8 +144,7 @@ function getIntervals() {
 
 var clickTick = 0;
 
-function updateTick() {
-    timers.nowTick = Date.now();
+function circularCountdown() {
 
     // If clickTick has a value, count it down to 1
     if (clickTick > 1) {
@@ -166,7 +163,7 @@ function updateAttention() {
 }
 
 window.onunload = function () {
-    localStorage.setItem("savedTick", JSON.stringify(timers.nowTick));
+    localStorage.setItem("savedTick", JSON.stringify(Date.now()));
     localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
     localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
     localStorage.setItem("savedStarTick", JSON.stringify(timers.starTick));
@@ -184,7 +181,7 @@ function tickInterval() {
         return;
     }
 
-    timers.nowTickGrab = timers.nowTick + 400;
+    timers.nowTickGrab = Date.now() + 400;
 
     if (ii < PlusArrayCount) {
         ii += 1;
@@ -196,7 +193,6 @@ function clicker() {
         clickTick = 180;
     }
 }
-
 
 //Circular timer countdown
 function clickTimerConditions(ClickTickReaches1) {
@@ -229,7 +225,6 @@ function addAPlus() {
     plusDataArray.push(plus);
     clicker();
 }
-
 
 // Event listener for feed button press mouse click
 canvas.addEventListener("click", function (e) {
@@ -268,9 +263,9 @@ attentionGradient.addColorStop(0.66, "rgba(255, 173, 56, 0.8)");
 attentionGradient.addColorStop(1, "rgba(244, 0, 5, 0.8)");
 
 function draw() {
-    radians = (Math.PI / 180) * (degrees * 2);
+    var radians = (Math.PI / 180) * (degrees * 2);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillText("Now Tick: " + timers.nowTick, 100, 10);
+    ctx.fillText("Seconds Away: " + timers.awayTick, 100, 10);
     ctx.fillText("Star Tick: " + timers.starTick, 100, 20);
     ctx.fillText("clicked: " + flags.clicked, 150, 30);
     ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
@@ -293,7 +288,7 @@ function draw() {
     }
 
     if (plusDataArray.length > 0 && flags.drawPlusNow === "yep") {
-        if (timers.nowTick > timers.nowTickGrab) {
+        if (Date.now() > timers.nowTickGrab) {
             tickInterval();
         }
 
@@ -313,7 +308,7 @@ function draw() {
     }
 
     requestAnimationFrame(draw);
-    updateTick();
+    circularCountdown();
     updateAttention();
 }
 
