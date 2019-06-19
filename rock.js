@@ -6,6 +6,7 @@ requestAnimationFrame: false */
 //localStorage.removeItem("savedAttention");
 //localStorage.removeItem("savedTuesday");
 //localStorage.removeItem("savedStarTick");
+//localStorage.removeItem("savedStarNow");
 //localStorage.removeItem("beenTold");
 
 var canvas = document.getElementById("myCanvas");
@@ -33,7 +34,8 @@ var timers = {
     dataTick: 0,
     awayTick: 0,
     nowTickGrab: 0,
-    starTick: 0
+    starTick: 0,
+    tuesdayInMiliseconds: 0
 };
 
 var flags = {
@@ -45,10 +47,12 @@ var flags = {
 
 var attentionLevel = 0;
 var dataAttention;
-var tuesdayInMiliseconds;
 var plusDataArray = [];
 var MissedItBy;
-var degrees = 0; // change in relation to the progress circle in degrees
+var degrees = 0;
+
+var d = new Date();
+var dayOfTheWeek = d.getDay();
 
 // Define Plus constructor
 function Plus(x, y, velY) {
@@ -73,8 +77,9 @@ function LoadData() {
     if (window.localStorage) {
         timers.dataTick = JSON.parse(localStorage.getItem("savedTick"));
         dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
-        tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
+        timers.tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
         timers.starTick = JSON.parse(localStorage.getItem("savedStarTick"));
+        flags.starNow = JSON.parse(localStorage.getItem("savedStarNow"));
         flags.beenTold = localStorage.getItem("beenTold");
         timers.awayTick = Math.round((Date.now() - timers.dataTick) / 1000);
         attentionLevel = dataAttention + (timers.awayTick / (tickspan.day / 1000)) * graphHeight;
@@ -84,18 +89,27 @@ function LoadData() {
     }
 }
 
+function starTime() {
+    if (dayOfTheWeek === 2) {
+        if (Date.now() > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
+            timers.starTick = Date.now() + 3600000; // set starTick to an hour from now for another star
+            flags.starNow = true;
+        }
+    }
+}
+
 // Work out forfeits
 function getIntervals() {
-    var d = new Date();
+    //var d = new Date();
+    //var dayOfTheWeek = d.getDay();
     var interval;
-    var dayOfTheWeek = d.getDay();
-
     if (
-        tuesdayInMiliseconds === undefined ||
-        tuesdayInMiliseconds === "" ||
-        tuesdayInMiliseconds === null
+        timers.tuesdayInMiliseconds === undefined ||
+        timers.tuesdayInMiliseconds === "" ||
+        timers.tuesdayInMiliseconds === null
     ) {
         flags.beenTold = "nope";
+        flags.starNow = false;
         alert("First time, huh?");
     }
 
@@ -104,11 +118,7 @@ function getIntervals() {
     }
 
     if (dayOfTheWeek === 2) { // If its Tuesday...
-        if (Date.now() > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
-            timers.starTick = Date.now() + 3600000; // set starTick to an hour from now for another star
-            flags.starNow = true;
-            alert("The time for a new star has passed");
-        }
+        starTime();
         flags.beenTold = "nope";
     }
 
@@ -122,7 +132,6 @@ function getIntervals() {
             if (dayOfTheWeek < 2) {
                 MissedItBy = dayOfTheWeek + 5;
             }
-
             flags.beenTold = "yep";
             alert("The update was " + MissedItBy + " days ago");
         }
@@ -138,15 +147,14 @@ function getIntervals() {
         ((interval - d.getDay() + (interval + 5)) % (interval + 5)) + d.getDate()
     );
     var tuesday = d.toDateString();
-    tuesdayInMiliseconds = new Date(tuesday).getTime();
+    timers.tuesdayInMiliseconds = new Date(tuesday).getTime();
     alert("Dont forget to come back " + tuesday + " for another update!");
 }
 
 var clickTick = 0;
 
+// If clickTick has a value, count it down to 1
 function circularCountdown() {
-
-    // If clickTick has a value, count it down to 1
     if (clickTick > 1) {
         clickTick -= 1;
         degrees = clickTick;
@@ -165,8 +173,9 @@ function updateAttention() {
 window.onunload = function () {
     localStorage.setItem("savedTick", JSON.stringify(Date.now()));
     localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
-    localStorage.setItem("savedTuesday", JSON.stringify(tuesdayInMiliseconds));
+    localStorage.setItem("savedTuesday", JSON.stringify(timers.tuesdayInMiliseconds));
     localStorage.setItem("savedStarTick", JSON.stringify(timers.starTick));
+    localStorage.setItem("savedStarNow", JSON.stringify(flags.starNow));
     localStorage.setItem("beenTold", flags.beenTold);
 };
 
@@ -188,9 +197,14 @@ function tickInterval() {
     }
 }
 
+//Start the circular timer if clicked & collect star if there is one
 function clicker() {
     if (flags.clicked === "yep" && clickTick === 0) {
         clickTick = 180;
+        if (flags.starNow === true) {
+            flags.starNow = false;
+            //alert("Collecting star");
+        }
     }
 }
 
@@ -207,7 +221,8 @@ function clickTimerConditions(ClickTickReaches1) {
 
 var lovedup = false;
 
-// Set timer to pause before displaying the heart: 500Ms
+// Set timer to pause before displaying the heart: 300Ms
+//And display heart for 1000Ms
 function ShowTheHeart() {
     setTimeout(function () {
         lovedup = true;
@@ -220,10 +235,12 @@ function ShowTheHeart() {
 }
 
 function addAPlus() {
-    flags.clicked = "yep";
-    var plus = new Plus(47, 11, -0.3);
-    plusDataArray.push(plus);
-    clicker();
+    if (plusDataArray.length <= parseInt(attentionLevel)) {
+        flags.clicked = "yep";
+        var plus = new Plus(47, 11, -0.3);
+        plusDataArray.push(plus);
+        clicker();
+    }
 }
 
 // Event listener for feed button press mouse click
@@ -249,7 +266,6 @@ canvas.addEventListener("click", function (e) {
 // Event listener for feed button press screen touch
 document.addEventListener("touchmove", function () {});
 canvas.addEventListener("touchstart", function () {
-
         if (flags.drawPlusNow !== "yep" && parseInt(attentionLevel) > 0) {
             addAPlus();
         }
@@ -267,8 +283,7 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillText("Seconds Away: " + timers.awayTick, 100, 10);
     ctx.fillText("Star Tick: " + timers.starTick, 100, 20);
-    ctx.fillText("clicked: " + flags.clicked, 150, 30);
-    ctx.fillText("Array Length: " + plusDataArray.length, 150, 40);
+    ctx.fillText("Star Now Flag: " + flags.starNow, 150, 40);
     ctx.drawImage(img, 0, 0, 36, 22, 4, 6, 36, 22); // Status
     ctx.drawImage(img, 0, 26, 36, 16, 39, 12, 36, 16); // Rock
     ctx.fillStyle = attentionGradient;
@@ -309,6 +324,7 @@ function draw() {
 
     requestAnimationFrame(draw);
     circularCountdown();
+    starTime();
     updateAttention();
 }
 
