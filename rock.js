@@ -9,6 +9,7 @@ requestAnimationFrame: false */
 //localStorage.removeItem("savedStarNow");
 //localStorage.removeItem("beenTold");
 
+(function() {
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 ctx.lineWidth = 1;
@@ -54,6 +55,7 @@ var degrees = 0;
 var d = new Date();
 var dayOfTheWeek = d.getDay();
 
+
 // Define Plus constructor
 function Plus(x, y, velY) {
     this.x = x;
@@ -83,18 +85,16 @@ function LoadData() {
         flags.beenTold = localStorage.getItem("beenTold");
         timers.awayTick = Math.round((Date.now() - timers.dataTick) / 1000);
         attentionLevel = dataAttention + (timers.awayTick / (tickspan.day / 1000)) * graphHeight;
-        attentionLevel = 16;
+        //attentionLevel = 16;
     } else {
         alert("No Web Storage without HTTP");
     }
 }
 
 function starTime() {
-    if (dayOfTheWeek === 2) {
-        if (Date.now() > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
-            timers.starTick = Date.now() + 3600000; // set starTick to an hour from now for another star
-            flags.starNow = true;
-        }
+    if (Date.now() > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
+        timers.starTick = Date.now() + 3600000; // set starTick to an hour from now for another star
+        flags.starNow = true;
     }
 }
 
@@ -103,17 +103,14 @@ function getIntervals() {
     //var d = new Date();
     //var dayOfTheWeek = d.getDay();
     var interval;
-    if (
-        timers.tuesdayInMiliseconds === undefined ||
-        timers.tuesdayInMiliseconds === "" ||
-        timers.tuesdayInMiliseconds === null
-    ) {
+    if (timers.tuesdayInMiliseconds === null) {
         flags.beenTold = "nope";
         flags.starNow = false;
         alert("First time, huh?");
     }
 
-    if (dayOfTheWeek === 3 && Date.now() - timers.dataTick > tickspan.overAWeek) {
+    if (dayOfTheWeek >= 3 && Date.now() - timers.dataTick > tickspan.overAWeek) {
+        //if (dayOfTheWeek === 3 && Date.now() - timers.dataTick > tickspan.overAWeek) {
         alert("You missed last Tuesdays update");
     }
 
@@ -273,7 +270,7 @@ canvas.addEventListener("touchstart", function () {
     false
 );
 
-var loop = 0;
+var loop;
 attentionGradient.addColorStop(0, "rgba(92, 182, 88, 0.8)");
 attentionGradient.addColorStop(0.66, "rgba(255, 173, 56, 0.8)");
 attentionGradient.addColorStop(1, "rgba(244, 0, 5, 0.8)");
@@ -324,10 +321,13 @@ function draw() {
 
     requestAnimationFrame(draw);
     circularCountdown();
-    starTime();
+    if (dayOfTheWeek === 2) {
+        starTime();
+    }
     updateAttention();
 }
 
 LoadData();
 getIntervals();
 requestAnimationFrame(draw);
+}());
