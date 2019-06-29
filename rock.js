@@ -51,6 +51,7 @@ requestAnimationFrame: false */
     var plusDataArray = [];
     var MissedItBy;
     var degrees = 0;
+    var starCount = 0;
 
     var d = new Date();
     var dayOfTheWeek = d.getDay();
@@ -82,10 +83,12 @@ requestAnimationFrame: false */
             timers.tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
             timers.starTick = JSON.parse(localStorage.getItem("savedStarTick"));
             flags.starNow = JSON.parse(localStorage.getItem("savedStarNow"));
+            starCount = JSON.parse(localStorage.getItem("savedStarCount"));
             flags.beenTold = localStorage.getItem("beenTold");
             timers.awayTick = Math.round((Date.now() - timers.dataTick) / 1000);
             attentionLevel = dataAttention + (timers.awayTick / (tickspan.day / 1000)) * graphHeight;
             //attentionLevel = 16;
+            //timers.starTick = null;
         } else {
             alert("No Web Storage without HTTP");
         }
@@ -106,6 +109,7 @@ requestAnimationFrame: false */
         if (timers.tuesdayInMiliseconds === null) {
             flags.beenTold = "nope";
             flags.starNow = false;
+            starCount = 0;
             alert("First time, huh?");
         }
 
@@ -120,6 +124,7 @@ requestAnimationFrame: false */
         }
 
         if (dayOfTheWeek !== 2) {
+            flags.starNow = false;
             timers.starTick = null;
             if (flags.beenTold === "nope") {
                 if (dayOfTheWeek > 2 && dayOfTheWeek <= 6) {
@@ -163,6 +168,24 @@ requestAnimationFrame: false */
     }
     var circularCountdown = makeCircularCountdown()
 
+
+    var starYOffset = 0;
+
+    function aStarIsBorn() {
+        return function raiseStar() {
+            if (starYOffset > 0 && starYOffset < 15) {
+                starYOffset += 0.4;
+
+                if (starYOffset >= 15) {
+                    flags.starNow = false;
+                    starYOffset = 0;
+                }
+            }
+        };
+    }
+    var raiseStar = aStarIsBorn()
+
+
     function updateAttention() {
         if (parseInt(attentionLevel) < 16) {
             attentionLevel += graphHeight / tickspan.day;
@@ -177,6 +200,7 @@ requestAnimationFrame: false */
         localStorage.setItem("savedTuesday", JSON.stringify(timers.tuesdayInMiliseconds));
         localStorage.setItem("savedStarTick", JSON.stringify(timers.starTick));
         localStorage.setItem("savedStarNow", JSON.stringify(flags.starNow));
+        localStorage.setItem("savedStarCount", JSON.stringify(starCount));
         localStorage.setItem("beenTold", flags.beenTold);
     };
 
@@ -198,17 +222,16 @@ requestAnimationFrame: false */
         }
     }
 
-    //Start the circular timer if clicked & collect star if there is one
     function clicker() {
-        if (flags.clicked === "yep" && clickTick === 0) {
-            clickTick = 180;
-            if (flags.starNow === true) {
-                flags.starNow = false;
-                //alert("Collecting star");
+        if (flags.clicked === "yep") {
+            if (clickTick === 0) {
+                clickTick = 180;
+            }
+            if (flags.starNow === true && starYOffset === 0) {
+                starYOffset = 0.4;
             }
         }
     }
-
     //Circular timer countdown
     function clickTimerConditions(ClickTickReaches1) {
         if (ClickTickReaches1 === 1) {
@@ -300,7 +323,7 @@ requestAnimationFrame: false */
         }
 
         if (flags.starNow === true) {
-            ctx.drawImage(img, 24, 3, 9, 9, 66, 19, 9, 9); // Star
+            ctx.drawImage(img, 24, 3, 9, 9, 66, 19 - starYOffset, 9, 9); // Star
         }
 
         if (plusDataArray.length > 0 && flags.drawPlusNow === "yep") {
@@ -327,6 +350,7 @@ requestAnimationFrame: false */
         circularCountdown();
         if (dayOfTheWeek === 2) {
             starTime();
+            raiseStar();
         }
         updateAttention();
     }
