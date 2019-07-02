@@ -308,6 +308,9 @@ requestAnimationFrame: false */
         //ctx.fillText("Seconds Away: " + timers.awayTick, 100, 10);
         //ctx.fillText("Star Tick: " + timers.starTick, 100, 20);
         //ctx.fillText("Star Now Flag: " + flags.starNow, 150, 40);
+        //ctx.fillStyle = "rgb(91, 87, 76)";
+        ctx.fillStyle = "rgb(200, 164, 67)";
+        ctx.fillText("00", 28, 25);
         ctx.drawImage(img, 0, 0, 36, 22, 4, 6, 36, 22); // Status
         ctx.drawImage(img, 0, 26, 36, 16, 39, 12, 36, 16); // Rock
         ctx.fillStyle = attentionGradient;
