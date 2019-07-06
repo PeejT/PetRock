@@ -93,6 +93,9 @@ requestAnimationFrame: false */
         } else {
             alert("No Web Storage without HTTP");
         }
+        if (starCount === null) {
+            starCount = 0;
+        }
     }
 
     function starTime() {
