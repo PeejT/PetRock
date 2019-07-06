@@ -6,7 +6,7 @@ requestAnimationFrame: false */
 //localStorage.removeItem("savedAttention");
 //localStorage.removeItem("savedTuesday");
 //localStorage.removeItem("savedStarTick");
-//localStorage.removeItem("savedStarNow");
+//localStorage.removeItem("savedStarDraw");
 //localStorage.removeItem("beenTold");
 
 (function () {
@@ -43,7 +43,8 @@ requestAnimationFrame: false */
         beenTold: "nope",
         clicked: "nope",
         drawPlusNow: "nope",
-        starNow: false
+        starDraw: false,
+        starClickable: false
     };
 
     var attentionLevel = 0;
@@ -82,12 +83,12 @@ requestAnimationFrame: false */
             dataAttention = JSON.parse(localStorage.getItem("savedAttention"));
             timers.tuesdayInMiliseconds = JSON.parse(localStorage.getItem("savedTuesday"));
             timers.starTick = JSON.parse(localStorage.getItem("savedStarTick"));
-            flags.starNow = JSON.parse(localStorage.getItem("savedStarNow"));
+            flags.starDraw = JSON.parse(localStorage.getItem("savedStarDraw"));
             starCount = JSON.parse(localStorage.getItem("savedStarCount"));
             flags.beenTold = localStorage.getItem("beenTold");
             timers.awayTick = Math.round((Date.now() - timers.dataTick) / 1000);
             attentionLevel = dataAttention + (timers.awayTick / (tickspan.day / 1000)) * graphHeight;
-            //attentionLevel = 16;
+            //attentionLevel = 0;
             //timers.starTick = null;
         } else {
             alert("No Web Storage without HTTP");
@@ -95,36 +96,34 @@ requestAnimationFrame: false */
     }
 
     function starTime() {
-        if (Date.now() > timers.starTick || timers.starTick === null) { // and nowTick is bigger than starTick ---
-            timers.starTick = Date.now() + 3600000; // set starTick to an hour from now for another star
-            flags.starNow = true;
+        if (Date.now() > timers.starTick || timers.starTick === null) {
+            timers.starTick = Date.now() + 3600000;
+            flags.starDraw = true;
+            flags.starClickable = true;
         }
     }
 
     // Work out forfeits
     function getIntervals() {
-        //var d = new Date();
-        //var dayOfTheWeek = d.getDay();
         var interval;
         if (timers.tuesdayInMiliseconds === null) {
             flags.beenTold = "nope";
-            flags.starNow = false;
+            flags.starDraw = false;
             starCount = 0;
             alert("First time, huh?");
         }
 
         if (dayOfTheWeek >= 3 && Date.now() - timers.dataTick > tickspan.overAWeek) {
-            //if (dayOfTheWeek === 3 && Date.now() - timers.dataTick > tickspan.overAWeek) {
             alert("You missed last Tuesdays update");
         }
 
-        if (dayOfTheWeek === 2) { // If its Tuesday...
+        if (dayOfTheWeek === 2) {
             starTime();
             flags.beenTold = "nope";
         }
 
         if (dayOfTheWeek !== 2) {
-            flags.starNow = false;
+            flags.starDraw = false;
             timers.starTick = null;
             if (flags.beenTold === "nope") {
                 if (dayOfTheWeek > 2 && dayOfTheWeek <= 6) {
@@ -156,9 +155,7 @@ requestAnimationFrame: false */
     var clickTick = 0;
 
     function makeCircularCountdown() {
-        //var clickTick = 0;
         return function circularCountdown() {
-            // If clickTick has a value, count it down to 1
             if (clickTick > 1) {
                 clickTick -= 1;
                 degrees = clickTick;
@@ -177,7 +174,7 @@ requestAnimationFrame: false */
                 starYOffset += 0.4;
 
                 if (starYOffset >= 15) {
-                    flags.starNow = false;
+                    flags.starDraw = false;
                     starYOffset = 0;
                 }
             }
@@ -199,7 +196,7 @@ requestAnimationFrame: false */
         localStorage.setItem("savedAttention", JSON.stringify(attentionLevel));
         localStorage.setItem("savedTuesday", JSON.stringify(timers.tuesdayInMiliseconds));
         localStorage.setItem("savedStarTick", JSON.stringify(timers.starTick));
-        localStorage.setItem("savedStarNow", JSON.stringify(flags.starNow));
+        localStorage.setItem("savedStarDraw", JSON.stringify(flags.starDraw));
         localStorage.setItem("savedStarCount", JSON.stringify(starCount));
         localStorage.setItem("beenTold", flags.beenTold);
     };
@@ -227,7 +224,7 @@ requestAnimationFrame: false */
             if (clickTick === 0) {
                 clickTick = 180;
             }
-            if (flags.starNow === true && starYOffset === 0) {
+            if (flags.starDraw === true && starYOffset === 0) {
                 starYOffset = 0.4;
             }
         }
@@ -275,13 +272,18 @@ requestAnimationFrame: false */
             //alert("Mouse Position x: " + x + " y: " + y);
             if (
                 flags.drawPlusNow !== "yep" &&
-                parseInt(attentionLevel) > 0 &&
                 x >= feedButton.x &&
                 x < feedButton.x + feedButton.w &&
                 y >= feedButton.y &&
                 y < feedButton.y + feedButton.h
             ) {
-                addAPlus();
+                if (parseInt(attentionLevel) > 0) {
+                    addAPlus();
+                }
+                if (flags.starClickable === true) {
+                    flags.starClickable = false;
+                    starCount += 1;
+                }
             }
         },
         false
@@ -293,24 +295,32 @@ requestAnimationFrame: false */
             if (flags.drawPlusNow !== "yep" && parseInt(attentionLevel) > 0) {
                 addAPlus();
             }
+
+            if (flags.drawPlusNow !== "yep" && flags.starClickable === true) {
+                flags.starClickable = false;
+                starCount += 1;
+            }
         },
         false
     );
 
     var loop;
+    var starCountString = "";
     attentionGradient.addColorStop(0, "rgba(92, 182, 88, 0.8)");
     attentionGradient.addColorStop(0.66, "rgba(255, 173, 56, 0.8)");
     attentionGradient.addColorStop(1, "rgba(244, 0, 5, 0.8)");
 
     function draw() {
         var radians = (Math.PI / 180) * (degrees * 2);
+        if (starCount < 9) {
+            starCountString = "0";
+        } else {
+            starCountString = "";
+        }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         //ctx.fillText("Seconds Away: " + timers.awayTick, 100, 10);
-        //ctx.fillText("Star Tick: " + timers.starTick, 100, 20);
-        //ctx.fillText("Star Now Flag: " + flags.starNow, 150, 40);
-        //ctx.fillStyle = "rgb(91, 87, 76)";
         ctx.fillStyle = "rgb(200, 164, 67)";
-        ctx.fillText("00", 28, 25);
+        ctx.fillText(starCountString + starCount, 28, 25); // Star pickup counter
         ctx.drawImage(img, 0, 0, 36, 22, 4, 6, 36, 22); // Status
         ctx.drawImage(img, 0, 26, 36, 16, 39, 12, 36, 16); // Rock
         ctx.fillStyle = attentionGradient;
@@ -325,7 +335,7 @@ requestAnimationFrame: false */
             ctx.drawImage(img, 8, 3, 9, 9, 47, 9, 9, 9); // Heart
         }
 
-        if (flags.starNow === true) {
+        if (flags.starDraw === true) {
             ctx.drawImage(img, 24, 3, 9, 9, 66, 19 - starYOffset, 9, 9); // Star
         }
 
